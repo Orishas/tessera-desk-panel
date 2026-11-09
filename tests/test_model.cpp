@@ -111,6 +111,18 @@ static void test_guess_logo() {
   assert(guess_logo("Radio").empty());
 }
 
+static void test_layout_without_bottom_fills() {
+  const Have bare{4, false, false, false, false, 0, true};
+  const Layout r = layout_rest(480, 480, bare, 8);
+  int bottom = 0;
+  for (int i = 0; i < r.count; ++i) bottom = r.slots[i].r.y + r.slots[i].r.h > bottom ? r.slots[i].r.y + r.slots[i].r.h : bottom;
+  assert(bottom == 480);
+  const Layout w = layout_work(480, 480, Have{4, true, true, false, false, 0, true}, 8);
+  bottom = 0;
+  for (int i = 0; i < w.count; ++i) bottom = w.slots[i].r.y + w.slots[i].r.h > bottom ? w.slots[i].r.y + w.slots[i].r.h : bottom;
+  assert(bottom == 480);
+}
+
 int main() {
   test_running_states();
   test_view_follows_power();
@@ -123,6 +135,7 @@ int main() {
   test_starting_times_out();
   test_starting_blocks_retap();
   test_guess_logo();
+  test_layout_without_bottom_fills();
   puts("all model tests passed");
   return 0;
 }

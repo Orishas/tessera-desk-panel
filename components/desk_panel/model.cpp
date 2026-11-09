@@ -47,8 +47,14 @@ Layout layout_rest(int w, int h, const Have &have, int gap) {
   Layout l;
   const int n = have.sources < REST_SOURCES ? have.sources : REST_SOURCES;
   const int cw = (w - gap) / 2;
+  Key bottom[3];
+  int m = 0;
+  for (int i = 0; i < have.moods && i < 2; ++i) bottom[m++] = Key(int(Key::MOOD0) + i);
+  if (have.device) bottom[m++] = Key::DEVICE;
+  // A tall tile keeps its third row only for keys to put there; without, the sources take the height.
+  const bool third = have.tall && m > 0;
   int rh[3];
-  if (have.tall) {
+  if (third) {
     const int parts[3] = {2, 2, 1};
     heights(h, gap, parts, 3, rh);
   } else {
@@ -60,11 +66,7 @@ Layout layout_rest(int w, int h, const Have &have, int gap) {
     add(l, k, c ? cw + gap : 0, r ? rh[0] + gap : 0, c ? w - cw - gap : cw, rh[r]);
   };
   for (int k = 0; k < n; ++k) cell(source(k), k);
-  if (have.tall) {
-    Key bottom[3];
-    int m = 0;
-    for (int i = 0; i < have.moods && i < 2; ++i) bottom[m++] = Key(int(Key::MOOD0) + i);
-    if (have.device) bottom[m++] = Key::DEVICE;
+  if (third) {
     row(l, bottom, m, rh[0] + rh[1] + 2 * gap, w, rh[2], gap);
   } else if (have.device && n < REST_SOURCES) {
     cell(Key::DEVICE, n);
@@ -75,8 +77,9 @@ Layout layout_rest(int w, int h, const Have &have, int gap) {
 Layout layout_work(int w, int h, const Have &have, int gap) {
   Layout l;
   const int n = have.sources < MAX_SOURCES ? have.sources : MAX_SOURCES;
+  const bool third = have.tall && have.moods > 0;
   int rh[3];
-  if (have.tall) {
+  if (third) {
     const int parts[3] = {4, 3, 2};
     heights(h, gap, parts, 3, rh);
   } else {
@@ -93,7 +96,7 @@ Layout layout_work(int w, int h, const Have &have, int gap) {
   if (have.autokey) mid[m++] = Key::AUTO;
   if (have.device) mid[m++] = Key::DEVICE;
   row(l, mid, m, rh[0] + gap, w, rh[1], gap);
-  if (have.tall) {
+  if (third) {
     Key moods[2];
     int c = 0;
     for (int i = 0; i < have.moods && i < 2; ++i) moods[c++] = Key(int(Key::MOOD0) + i);

@@ -1,0 +1,83 @@
+# What tools/preview.py shows (docs/PREVIEW.md of tessera-plugins): the desk in both views and the cases at the edges.
+tiles:
+  - tile: desk
+    name: Ruhe
+    entity: input_select.monitor_source
+    options: &all { script: script.show_source, status_1: binary_sensor.pc, status_2: binary_sensor.mac,
+                    status_3: media_player.ps5, auto_1: input_boolean.pc_auto, auto_2: input_boolean.mac_auto,
+                    auto_3: input_boolean.ps5_auto, picture: switch.monitor_picture, power: switch.monitor_off,
+                    device: switch.pc, mood_1: scene.focus, mood_2: scene.off }
+    sizes: [2x3]
+  - tile: desk
+    name: Arbeit
+    entity: input_select.monitor_source
+    options: &work { script: script.show_source, status_1: binary_sensor.pc, status_2: binary_sensor.mac,
+                     status_3: media_player.ps5, auto_1: input_boolean.pc_auto, auto_2: input_boolean.mac_auto,
+                     auto_3: input_boolean.ps5_auto, picture: switch.monitor_picture, power: switch.monitor_on,
+                     device: switch.pc, mood_1: scene.focus, mood_2: scene.off }
+    sizes: [2x3, 2x2]
+  - tile: desk
+    name: Arbeit Switch
+    entity: input_select.source_switch
+    options: *work
+    sizes: [2x3]
+  - tile: desk
+    name: Unknown choice
+    entity: input_select.source_unknown
+    options: *work
+    sizes: [2x3]
+  - tile: desk
+    name: Six sources
+    entity: input_select.source_six
+    options: *all
+    sizes: [2x3, 2x2]
+  - tile: desk
+    name: Six sources work
+    entity: input_select.source_six
+    options: *work
+    sizes: [2x3]
+  - tile: desk
+    name: Starting
+    entity: input_select.monitor_source
+    options: { script: script.show_source, status_1: binary_sensor.pc_off, power: switch.monitor_off,
+               device: switch.pc_off, mood_1: scene.focus, mood_2: scene.off }
+    sizes: [2x3]
+  - tile: desk
+    name: Bare
+    entity: input_select.monitor_source
+    sizes: [2x3]
+  - tile: desk
+    name: No entity
+    sizes: [2x3]
+
+cards:
+  - { card: confirm, entity: switch.pc }
+
+states:
+  input_select.monitor_source:
+    state: Mac
+    attributes: { friendly_name: Monitor source, options: [PC, Mac, PS5, Switch 2] }
+  input_select.source_switch:
+    state: Switch 2
+    attributes: { friendly_name: Monitor source, options: [PC, Mac, PS5, Switch 2] }
+  input_select.source_unknown:
+    state: Xbox
+    attributes: { friendly_name: Monitor source, options: [PC, Mac, PS5, Switch 2] }
+  input_select.source_six:
+    state: PC
+    attributes: { friendly_name: Monitor source, options: [PC, Mac, PS5, Switch 2, Xbox, Linux] }
+  script.show_source: { state: "off", attributes: { friendly_name: Show source } }
+  binary_sensor.pc: { state: "on", attributes: { friendly_name: PC } }
+  binary_sensor.pc_off: { state: "off", attributes: { friendly_name: PC } }
+  binary_sensor.mac: { state: "on", attributes: { friendly_name: Mac } }
+  media_player.ps5: { state: standby, attributes: { friendly_name: PS5 } }
+  input_boolean.pc_auto: { state: "on", attributes: { friendly_name: PC auto } }
+  input_boolean.mac_auto: { state: "on", attributes: { friendly_name: Mac auto } }
+  input_boolean.ps5_auto: { state: "off", attributes: { friendly_name: PS5 auto } }
+  switch.monitor_picture: { state: "on", attributes: { friendly_name: Picture } }
+  switch.monitor_on: { state: "on", attributes: { friendly_name: Monitor } }
+  switch.monitor_off: { state: "off", attributes: { friendly_name: Monitor } }
+  switch.pc: { state: "on", attributes: { friendly_name: PC } }
+  switch.pc_off: { state: "off", attributes: { friendly_name: PC } }
+  scene.focus: { state: "2026-11-09T10:00:00+00:00", attributes: { friendly_name: Fokus } }
+  scene.off: { state: "2026-11-09T09:00:00+00:00", attributes: { friendly_name: Aus } }
