@@ -133,9 +133,50 @@ void DeskTile::on_tick(uint32_t epoch) {
     pending_ = -1;
     paint();
   }
+  if (!pulsing_) return;
+  if (!starting_.active(esphome::millis(), device_on_)) {
+    pulsing_ = false;   // the device is there, or it took too long: the key shows its state again
+    paint();
+    return;
+  }
+  // "Starting ...": the device key pulses once a second, painted here (no animation of its own).
+  if (!shown_ctl_[C_DEVICE]) return;
+  const bool lit = starting_.lit(epoch);
+  ui::set_fill(cblock_[C_DEVICE], tessera::Tone::NORMAL, lit ? theme::ACCENT : theme::TRACK);
+  ui::set_color(cicon_[C_DEVICE], lit ? theme::ON_ACCENT : theme::INK);
+  ui::set_color(cword_[C_DEVICE], lit ? theme::ON_ACCENT : theme::INK_SOFT);
 }
 
-void DeskTile::on_tap() {}
+void DeskTile::on_tap() {
+  const tessera::Point p = tessera::tap_point();
+  if (p.x < 0 || entity_.empty()) return;
+  const Key k = hit(layout_, p.x, p.y);
+  const int ki = int(k);
+  if (ki >= int(Key::SOURCE0) && ki < int(Key::SOURCE0) + MAX_SOURCES) return tap_source(ki);
+  switch (k) {
+    case Key::PICTURE: return tap_switch(picture_, picture_on_);
+    case Key::POWER: return tap_switch(power_, power_on_);
+    case Key::AUTO: {
+      const int a = auto_index();
+      if (a >= 0) tap_switch(auto_[a], auto_on_[a]);
+      return;
+    }
+    case Key::DEVICE: return tap_device();
+    case Key::MOOD0:
+    case Key::MOOD1: {
+      // The first mood place holds the second option when the first is empty.
+      const int i = k == Key::MOOD1 || mood_[0].empty() ? 1 : 0;
+      const std::string e = roomy::plain(mood_[i]);
+      if (e.empty()) return;
+      if (tessera::action(e.rfind("script.", 0) == 0 ? "script.turn_on" : "scene.turn_on", e)) {
+        mood_chosen_ = i;
+        paint();
+      }
+      return;
+    }
+    default: return;
+  }
+}
 
 int DeskTile::active() const {
   if (pending_ >= 0) return pending_;
@@ -298,8 +339,57 @@ void DeskTile::paint() {
   show(note_, empty);
 }
 
-void DeskTile::tap_source(int) {}
-void DeskTile::tap_switch(const tessera::Text &, bool &) {}
-void DeskTile::tap_device() {}
+void DeskTile::tap_source(int i) {
+  if (i >= count_) return;
+  const std::string value = src_[i].value;
+  bool sent;
+  if (!script_.empty()) {
+    JsonDocument d;
+    d["variables"]["quelle"] = value;
+    sent = tessera::action("script.turn_on", roomy::plain(script_), d);
+  } else {
+    const std::string entity = roomy::plain(entity_);
+    JsonDocument d;
+    d["option"] = value;
+    sent = tessera::action(entity.rfind("select.", 0) == 0 ? "select.select_option" : "input_select.select_option",
+                           entity, d);
+  }
+  if (sent) {
+    pending_ = i;
+    pending_at_ = esphome::millis();
+    paint();
+  }
+}
+
+// A switch or an input boolean, turned the other way; the key shows it at once and Home Assistant confirms.
+void DeskTile::tap_switch(const tessera::Text &entity, bool &on) {
+  const std::string e = roomy::plain(entity);
+  if (e.empty()) return;
+  const bool boolean = e.rfind("input_boolean.", 0) == 0;
+  const char *service = on ? (boolean ? "input_boolean.turn_off" : "switch.turn_off")
+                           : (boolean ? "input_boolean.turn_on" : "switch.turn_on");
+  if (tessera::action(service, e)) {
+    on = !on;
+    paint();
+  }
+}
+
+// Off: turn it on and pulse until it is there. On: ask first, on the card. Starting: nothing, it is on its way.
+void DeskTile::tap_device() {
+  if (starting_.active(esphome::millis(), device_on_)) return;
+  const std::string e = roomy::plain(device_);
+  if (e.empty()) return;
+  if (device_on_) {
+    const std::string name = device_name_.empty() ? std::string("") : roomy::plain(device_name_);
+    tessera::open_card(plugin_->plugin_id(), "confirm", e, tile_, name);
+    return;
+  }
+  const bool boolean = e.rfind("input_boolean.", 0) == 0;
+  if (tessera::action(boolean ? "input_boolean.turn_on" : "switch.turn_on", e)) {
+    starting_.begin(esphome::millis());
+    pulsing_ = true;
+    paint();
+  }
+}
 
 }  // namespace esphome::desk_panel

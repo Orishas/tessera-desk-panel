@@ -1,5 +1,7 @@
 {
-  "_meta": { "name": "Deutsch" },
+  "_meta": {
+    "name": "Deutsch"
+  },
   "screen": {
     "choose_select": "Auswahl wählen",
     "picture": "Bild",
@@ -8,7 +10,8 @@
     "starting": "Startet …",
     "shutdown_q": "{name} herunterfahren?",
     "cancel": "Abbrechen",
-    "shutdown": "Herunterfahren"
+    "shutdown": "Herunterfahren",
+    "shutdown_q_plain": "Herunterfahren?"
   },
   "app": {
     "name": "Schreibtisch",

@@ -1,5 +1,7 @@
 {
-  "_meta": { "name": "English" },
+  "_meta": {
+    "name": "English"
+  },
   "screen": {
     "choose_select": "Choose a select",
     "picture": "Picture",
@@ -8,7 +10,8 @@
     "starting": "Starting …",
     "shutdown_q": "Shut down {name}?",
     "cancel": "Cancel",
-    "shutdown": "Shut down"
+    "shutdown": "Shut down",
+    "shutdown_q_plain": "Shut down?"
   },
   "app": {
     "name": "Desk panel",
