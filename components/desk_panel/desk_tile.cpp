@@ -39,6 +39,7 @@ void DeskTile::create(const tessera::TileContext &c) {
   height_ = c.height;
   tile_ = c.tile;
   tall_ = c.rows >= 3;
+  rows_ = c.rows;
   entity_ = roomy::text(std::string(c.entity ? c.entity : ""));
   script_ = roomy::text(option(c, "script"));
   picture_ = roomy::text(option(c, "picture"));
@@ -195,7 +196,7 @@ Have DeskTile::have() const {
   int moods = 0;
   if (!mood_[0].empty()) ++moods;
   if (!mood_[1].empty()) ++moods;
-  return Have{count_, !picture_.empty(), !power_.empty(), auto_index() >= 0, !device_.empty(), moods, tall_};
+  return Have{count_, !picture_.empty(), !power_.empty(), auto_index() >= 0, !device_.empty(), moods, tall_, rows_};
 }
 
 DeskTile::Ctl DeskTile::ctl_of(Key k) {

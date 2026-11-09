@@ -40,6 +40,7 @@ class DeskTile : public tessera::Tile {
   lv_obj_t *parent_{};
   int width_ = 0, height_ = 0, tile_ = -1;
   bool tall_ = true;
+  int rows_ = 3;
   tessera::Text entity_, script_, picture_, power_, device_, chosen_;
   tessera::Text status_[3], auto_[3], mood_[2];
   tessera::Text device_name_, mood_name_[2];

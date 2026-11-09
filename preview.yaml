@@ -7,7 +7,7 @@ tiles:
                     status_3: media_player.ps5, auto_1: input_boolean.pc_auto, auto_2: input_boolean.mac_auto,
                     auto_3: input_boolean.ps5_auto, picture: switch.monitor_picture, power: switch.monitor_off,
                     device: switch.pc, mood_1: scene.focus, mood_2: scene.off }
-    sizes: [2x3]
+    sizes: [2x3, 2x1]
   - tile: desk
     name: Arbeit
     entity: input_select.monitor_source
@@ -20,7 +20,7 @@ tiles:
     name: Arbeit Switch
     entity: input_select.source_switch
     options: *work
-    sizes: [2x3]
+    sizes: [2x3, 2x1]
   - tile: desk
     name: Unknown choice
     entity: input_select.source_unknown

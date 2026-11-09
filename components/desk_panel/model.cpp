@@ -43,10 +43,20 @@ static void heights(int h, int gap, const int *parts, int n, int *out) {
 
 static Key source(int k) { return Key(int(Key::SOURCE0) + k); }
 
+// A tile one row high (2x1): the sources in a row, nothing else fits there.
+static Layout one_row(int w, int h, int n, int gap) {
+  Layout l;
+  Key keys[MAX_SOURCES];
+  for (int k = 0; k < n; ++k) keys[k] = source(k);
+  row(l, keys, n, 0, w, h, gap);
+  return l;
+}
+
 Layout layout_rest(int w, int h, const Have &have, int gap) {
   Layout l;
   if (have.sources <= 0) return l;   // nothing shows, so nothing takes a tap
   const int n = have.sources < REST_SOURCES ? have.sources : REST_SOURCES;
+  if (have.rows == 1) return one_row(w, h, n, gap);
   const int cw = (w - gap) / 2;
   Key bottom[3];
   int m = 0;
@@ -79,6 +89,7 @@ Layout layout_work(int w, int h, const Have &have, int gap) {
   Layout l;
   if (have.sources <= 0) return l;   // nothing shows, so nothing takes a tap
   const int n = have.sources < MAX_SOURCES ? have.sources : MAX_SOURCES;
+  if (have.rows == 1) return one_row(w, h, n, gap);
   const bool third = have.tall && have.moods > 0;
   int rh[3];
   if (third) {
@@ -118,7 +129,7 @@ Key hit(const Layout &l, int x, int y) {
 bool needs_relayout(const Have &was, View was_view, const Have &now, View now_view) {
   return was_view != now_view || was.sources != now.sources || was.autokey != now.autokey ||
          was.picture != now.picture || was.power != now.power || was.device != now.device ||
-         was.moods != now.moods || was.tall != now.tall;
+         was.moods != now.moods || was.tall != now.tall || was.rows != now.rows;
 }
 
 bool source_lit(View view, int i, int pending, int active) {

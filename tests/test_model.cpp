@@ -148,6 +148,18 @@ static void test_source_lit_rest_pending() {
   assert(!source_lit(View::WORK, 0, -1, -1));  // WORK: unknown choice marks none
 }
 
+static void test_layout_one_row_only_sources() {
+  Have one{4, true, true, true, true, 2, false};
+  one.rows = 1;
+  const Layout r = layout_rest(480, 160, one, 8), w = layout_work(480, 160, one, 8);
+  assert(r.count == 4 && w.count == 4);
+  for (int i = 0; i < 4; ++i) {
+    assert(r.slots[i].r.y == 0 && r.slots[i].r.h == 160);
+    assert(w.slots[i].r.y == 0 && w.slots[i].r.h == 160);
+  }
+  assert(r.slots[3].r.x + r.slots[3].r.w == 480);
+}
+
 int main() {
   test_running_states();
   test_view_follows_power();
@@ -164,6 +176,7 @@ int main() {
   test_relayout_on_auto_change();
   test_layout_empty_without_sources();
   test_source_lit_rest_pending();
+  test_layout_one_row_only_sources();
   puts("all model tests passed");
   return 0;
 }

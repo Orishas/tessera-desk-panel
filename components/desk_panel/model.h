@@ -22,7 +22,8 @@ bool is_running(const char *state);
 View choose_view(bool has_power, bool power_on, const bool running[3], const bool has_status[3]);
 
 // What the person has, for laying out. autokey: the chosen source has an Auto switch. tall: the tile is three rows.
-struct Have { int sources; bool picture, power, autokey, device; int moods; bool tall; };
+// rows: the tile's grid rows; a tile one row high shows its sources alone.
+struct Have { int sources; bool picture, power, autokey, device; int moods; bool tall; int rows = 2; };
 Layout layout_rest(int w, int h, const Have &have, int gap);
 Layout layout_work(int w, int h, const Have &have, int gap);
 Key hit(const Layout &l, int x, int y);
