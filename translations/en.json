@@ -15,9 +15,9 @@
   },
   "app": {
     "name": "Desk panel",
-    "summary": "A whole page for a desk: with the monitor off, large keys that start a source; with it on, the sources with their state, the monitor's keys, Auto and the PC's switch. Two moods under it.",
+    "summary": "A whole page for a desk: with the monitor off, large keys that start a source; with it on, the sources with their state, the monitor's keys, Auto and the PC's switch.",
     "tile_name": "Desk panel",
-    "tile_example": "PC, Mac, PS5 and Switch, monitor, PC, moods",
+    "tile_example": "PC, Mac, PS5 and Switch, monitor, PC",
     "card_name": "Shut down?",
     "script": "Script",
     "script_hint": "Optional. A tap on a source runs this script with the option in the field quelle, instead of choosing the option directly.",
@@ -34,9 +34,6 @@
     "power": "Monitor switch",
     "power_hint": "Optional. On while the monitor is on. It also chooses the view: off shows the large start keys.",
     "device": "Device",
-    "device_hint": "Optional. A switch for a device such as a PC: off, a tap turns it on; on, the tile asks before it turns it off.",
-    "mood_1": "1st mood",
-    "mood_2": "2nd mood",
-    "mood_hint": "Optional. A scene or a script; the key carries its name."
+    "device_hint": "Optional. A switch for a device such as a PC: off, a tap turns it on; on, the tile asks before it turns it off."
   }
 }

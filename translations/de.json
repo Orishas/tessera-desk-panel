@@ -15,9 +15,9 @@
   },
   "app": {
     "name": "Schreibtisch",
-    "summary": "Eine ganze Seite für den Schreibtisch: Monitor aus zeigt große Start-Tasten, Monitor an die Quellen mit Status, Monitor-Tasten, Auto und den PC-Schalter. Dazu zwei Stimmungen.",
+    "summary": "Eine ganze Seite für den Schreibtisch: Monitor aus zeigt große Start-Tasten, Monitor an die Quellen mit Status, Monitor-Tasten, Auto und den PC-Schalter.",
     "tile_name": "Schreibtisch",
-    "tile_example": "PC, Mac, PS5 und Switch, Monitor, PC, Stimmungen",
+    "tile_example": "PC, Mac, PS5 und Switch, Monitor, PC",
     "card_name": "Herunterfahren?",
     "script": "Skript",
     "script_hint": "Optional. Ein Tipp auf eine Quelle startet dieses Skript mit der Option im Feld quelle, statt die Option direkt zu wählen.",
@@ -34,9 +34,6 @@
     "power": "Schalter für den Monitor",
     "power_hint": "Optional. An, solange der Monitor an ist. Er entscheidet auch die Ansicht: aus zeigt die großen Start-Tasten.",
     "device": "Gerät",
-    "device_hint": "Optional. Ein Schalter für ein Gerät wie den PC: aus schaltet ein Tipp ihn ein, an fragt die Kachel vor dem Ausschalten nach.",
-    "mood_1": "1. Stimmung",
-    "mood_2": "2. Stimmung",
-    "mood_hint": "Optional. Eine Szene oder ein Skript; die Taste trägt ihren Namen."
+    "device_hint": "Optional. Ein Schalter für ein Gerät wie den PC: aus schaltet ein Tipp ihn ein, an fragt die Kachel vor dem Ausschalten nach."
   }
 }

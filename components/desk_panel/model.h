@@ -7,7 +7,7 @@ namespace esphome::desk_panel {
 
 enum class View { REST, WORK };
 // SOURCE0 + k is the k-th source (k < 6).
-enum class Key : int { NONE = -1, SOURCE0 = 0, PICTURE = 10, POWER, AUTO, DEVICE, MOOD0, MOOD1 };
+enum class Key : int { NONE = -1, SOURCE0 = 0, PICTURE = 10, POWER, AUTO, DEVICE };
 struct Rect { int x, y, w, h; };
 struct Slot { Key key; Rect r; };
 struct Layout { Slot slots[16]; int count = 0; };
@@ -23,7 +23,7 @@ View choose_view(bool has_power, bool power_on, const bool running[3], const boo
 
 // What the person has, for laying out. autokey: the chosen source has an Auto switch. tall: the tile is three rows.
 // rows: the tile's grid rows; a tile one row high shows its sources alone.
-struct Have { int sources; bool picture, power, autokey, device; int moods; bool tall; int rows = 2; };
+struct Have { int sources; bool picture, power, autokey, device; bool tall; int rows = 2; };
 Layout layout_rest(int w, int h, const Have &have, int gap);
 Layout layout_work(int w, int h, const Have &have, int gap);
 Key hit(const Layout &l, int x, int y);
@@ -38,7 +38,7 @@ struct Starting {
   bool on = false;
   void begin(uint32_t now_ms);
   bool active(uint32_t now_ms, bool device_on);   // ends itself
-  bool lit(uint32_t epoch) const;                  // the pulse: lit on even seconds
+  bool lit(uint32_t now_ms) const;                 // the pulse: lit in every other second since it began
 };
 
 }  // namespace esphome::desk_panel

@@ -6,7 +6,7 @@ tiles:
     options: &all { script: script.show_source, status_1: binary_sensor.pc, status_2: binary_sensor.mac,
                     status_3: media_player.ps5, auto_1: input_boolean.pc_auto, auto_2: input_boolean.mac_auto,
                     auto_3: input_boolean.ps5_auto, picture: switch.monitor_picture, power: switch.monitor_off,
-                    device: switch.pc, mood_1: scene.focus, mood_2: scene.off }
+                    device: switch.pc }
     sizes: [2x3, 2x2, 2x1]
   - tile: desk
     name: Arbeit
@@ -14,7 +14,7 @@ tiles:
     options: &work { script: script.show_source, status_1: binary_sensor.pc, status_2: binary_sensor.mac,
                      status_3: media_player.ps5, auto_1: input_boolean.pc_auto, auto_2: input_boolean.mac_auto,
                      auto_3: input_boolean.ps5_auto, picture: switch.monitor_picture, power: switch.monitor_on,
-                     device: switch.pc, mood_1: scene.focus, mood_2: scene.off }
+                     device: switch.pc }
     sizes: [2x3, 2x2]
   - tile: desk
     name: Arbeit Switch
@@ -40,13 +40,13 @@ tiles:
     name: Picture off
     entity: input_select.monitor_source
     options: { script: script.show_source, picture: switch.monitor_picture_off, power: switch.monitor_on,
-               device: switch.pc, mood_1: scene.focus, mood_2: scene.off }
+               device: switch.pc }
     sizes: [2x3]
   - tile: desk
     name: Starting
     entity: input_select.monitor_source
     options: { script: script.show_source, status_1: binary_sensor.pc_off, power: switch.monitor_off,
-               device: switch.pc_off, mood_1: scene.focus, mood_2: scene.off }
+               device: switch.pc_off }
     sizes: [2x3]
   - tile: desk
     name: Bare
@@ -86,5 +86,3 @@ states:
   switch.monitor_off: { state: "off", attributes: { friendly_name: Monitor } }
   switch.pc: { state: "on", attributes: { friendly_name: PC } }
   switch.pc_off: { state: "off", attributes: { friendly_name: PC } }
-  scene.focus: { state: "2026-11-09T10:00:00+00:00", attributes: { friendly_name: Fokus } }
-  scene.off: { state: "2026-11-09T09:00:00+00:00", attributes: { friendly_name: Aus } }

@@ -4,6 +4,7 @@
 #include "esphome/core/hal.h"
 #include <algorithm>
 #include <cstdio>
+#include <cstring>
 #include <string>
 
 namespace esphome::desk_panel {
@@ -52,10 +53,6 @@ void DeskTile::create(const tessera::TileContext &c) {
     snprintf(id, sizeof(id), "auto_%d", i + 1);
     auto_[i] = roomy::text(option(c, id));
   }
-  for (int i = 0; i < 2; ++i) {
-    snprintf(id, sizeof(id), "mood_%d", i + 1);
-    mood_[i] = roomy::text(option(c, id));
-  }
 
   for (int i = 0; i < MAX_SOURCES; ++i) {
     sblock_[i] = key_block(c.parent);
@@ -77,7 +74,7 @@ void DeskTile::create(const tessera::TileContext &c) {
   for (int k = 0; k < C_COUNT; ++k) {
     cblock_[k] = key_block(c.parent);
     cicon_[k] = ui::label(cblock_[k], Font::ICON_SMALL, theme::INK);
-    cword_[k] = ui::label(cblock_[k], k >= C_MOOD0 ? Font::BODY_LARGE : Font::BODY, theme::INK_SOFT);
+    cword_[k] = ui::label(cblock_[k], Font::BODY, theme::INK_SOFT);
     lv_obj_set_style_text_align(cword_[k], LV_TEXT_ALIGN_CENTER, 0);
     show(cblock_[k], false);
   }
@@ -94,7 +91,8 @@ void DeskTile::on_state(JsonObjectConst data) {
   for (JsonVariantConst v : data["attributes"]["options"].as<JsonArrayConst>()) {
     if (count >= MAX_SOURCES) break;
     const char *s = v.as<const char *>();
-    if (!s || !*s) continue;
+    // An option that does not fit is left out: cut short, a tap would send a value the select does not have.
+    if (!s || !*s || strlen(s) >= sizeof(src_[0].value)) continue;
     Source &src = src_[count++];
     snprintf(src.value, sizeof(src.value), "%s", s);
     snprintf(src.logo, sizeof(src.logo), "%s", guess_logo(s).c_str());
@@ -111,12 +109,10 @@ void DeskTile::on_state(JsonObjectConst data) {
   power_on_ = std::string(e["power"]["state"] | "") == "on";
   device_on_ = std::string(e["device"]["state"] | "") == "on";
   device_name_ = roomy::text(std::string(e["device"]["name"] | ""));
-  for (int i = 0; i < 2; ++i) {
-    snprintf(id, sizeof(id), "mood_%d", i + 1);
-    mood_name_[i] = roomy::text(std::string(e[id]["name"] | ""));
-  }
-  // Home Assistant has the tapped option now, or it never will: the key follows the select again.
-  if (pending_ >= 0 && pending_ < count && roomy::same(chosen_, std::string(src_[pending_].value))) pending_ = -1;
+  // Home Assistant has the tapped option now, or the option is gone: the key follows the select again.
+  if (pending_ >= count || (pending_ >= 0 && roomy::same(chosen_, std::string(src_[pending_].value)))) pending_ = -1;
+  // The device is there: "Starting ..." ends with this state, not a second later.
+  if (pulsing_ && !starting_.active(esphome::millis(), device_on_)) pulsing_ = false;
 
   bool has_status[3];
   for (int i = 0; i < 3; ++i) has_status[i] = !status_[i].empty();
@@ -130,7 +126,7 @@ void DeskTile::refresh() {
   else paint();
 }
 
-void DeskTile::on_tick(uint32_t epoch) {
+void DeskTile::on_tick(uint32_t) {
   if (pending_ >= 0 && esphome::millis() - pending_at_ > PENDING_MS) {
     pending_ = -1;
     refresh();   // the chosen source is the select's again: its Auto key may come or go
@@ -141,9 +137,11 @@ void DeskTile::on_tick(uint32_t epoch) {
     paint();
     return;
   }
-  // "Starting ...": the device key pulses once a second, painted here (no animation of its own).
+  // "Starting ...": the device key pulses once a second, painted here (no animation of its own). Counted from the
+  // tap, so it pulses on a screen whose clock is not set too.
+  const bool lit = starting_.lit(esphome::millis());
+  pulse_lit_ = lit;
   if (!shown_ctl_[C_DEVICE]) return;
-  const bool lit = starting_.lit(epoch);
   ui::set_fill(cblock_[C_DEVICE], tessera::Tone::NORMAL, lit ? theme::ACCENT : theme::TRACK);
   ui::set_color(cicon_[C_DEVICE], lit ? theme::ON_ACCENT : theme::INK);
   ui::set_color(cword_[C_DEVICE], lit ? theme::ON_ACCENT : theme::INK_SOFT);
@@ -164,18 +162,6 @@ void DeskTile::on_tap() {
       return;
     }
     case Key::DEVICE: return tap_device();
-    case Key::MOOD0:
-    case Key::MOOD1: {
-      // The first mood place holds the second option when the first is empty.
-      const int i = k == Key::MOOD1 || mood_[0].empty() ? 1 : 0;
-      const std::string e = roomy::plain(mood_[i]);
-      if (e.empty()) return;
-      if (tessera::action(e.rfind("script.", 0) == 0 ? "script.turn_on" : "scene.turn_on", e)) {
-        mood_chosen_ = i;
-        paint();
-      }
-      return;
-    }
     default: return;
   }
 }
@@ -193,10 +179,7 @@ int DeskTile::auto_index() const {
 }
 
 Have DeskTile::have() const {
-  int moods = 0;
-  if (!mood_[0].empty()) ++moods;
-  if (!mood_[1].empty()) ++moods;
-  return Have{count_, !picture_.empty(), !power_.empty(), auto_index() >= 0, !device_.empty(), moods, tall_, rows_};
+  return Have{count_, !picture_.empty(), !power_.empty(), auto_index() >= 0, !device_.empty(), tall_, rows_};
 }
 
 DeskTile::Ctl DeskTile::ctl_of(Key k) {
@@ -204,9 +187,7 @@ DeskTile::Ctl DeskTile::ctl_of(Key k) {
     case Key::PICTURE: return C_PICTURE;
     case Key::POWER: return C_POWER;
     case Key::AUTO: return C_AUTO;
-    case Key::DEVICE: return C_DEVICE;
-    case Key::MOOD0: return C_MOOD0;
-    default: return C_MOOD1;
+    default: return C_DEVICE;
   }
 }
 
@@ -216,7 +197,6 @@ void DeskTile::build() {
   laid_ = h;
   laid_view_ = view_;
   const int gap = ui::px(8);
-  // Only the moods the person chose, in their order: the second alone takes MOOD0's place.
   layout_ = view_ == View::REST ? layout_rest(width_, height_, h, gap) : layout_work(width_, height_, h, gap);
   for (bool &s : shown_src_) s = false;
   for (bool &s : shown_ctl_) s = false;
@@ -251,9 +231,10 @@ void DeskTile::place_source(int i, const Rect &r) {
   if (alpha) {
     // The mask at the key's size, made again only when the size or the logo changed.
     if (made_side_[i] != side || made_logo_[i] != alpha) {
+      // The image lets go of the old mask before it is made again; set anew below, it reads the new size.
+      lv_image_set_src(slogo_[i], nullptr);
       mask_[i].assign(size_t(side) * side, 0);
       resample(alpha, side, mask_[i].data());
-      lv_image_set_src(slogo_[i], nullptr);
       lv_image_dsc_t &d = image_[i];
       d = lv_image_dsc_t{};
       d.header.magic = LV_IMAGE_HEADER_MAGIC;
@@ -283,18 +264,26 @@ void DeskTile::place_source(int i, const Rect &r) {
 void DeskTile::place_ctl(Ctl k, const Rect &r) {
   lv_obj_set_pos(cblock_[k], r.x, r.y);
   lv_obj_set_size(cblock_[k], r.w, r.h);
-  const bool icon = k < C_MOOD0;
-  const Font wf = k >= C_MOOD0 ? Font::BODY_LARGE : Font::BODY;
-  const int ih = icon ? ui::line_height(Font::ICON_SMALL) : 0, wh = ui::line_height(wf), pad = ui::px(4);
-  const int top = (r.h - ih - (icon ? pad : 0) - wh) / 2;
-  if (icon) {
-    lv_obj_set_width(cicon_[k], r.w);
-    lv_obj_set_style_text_align(cicon_[k], LV_TEXT_ALIGN_CENTER, 0);
-    lv_obj_set_pos(cicon_[k], 0, top);
+  const int ih = ui::line_height(Font::ICON_SMALL), wh = ui::line_height(Font::BODY), pad = ui::px(4);
+  if (r.h < ih + pad + wh + 2 * pad) {
+    // Too low for the icon over the word (the device's row over the whole width): the two side by side, meeting a
+    // little left of the middle so a short word balances the icon.
+    const int split = r.w / 2 - ih / 2;
+    lv_obj_set_width(cicon_[k], split - pad);
+    lv_obj_set_style_text_align(cicon_[k], LV_TEXT_ALIGN_RIGHT, 0);
+    lv_obj_set_pos(cicon_[k], 0, (r.h - ih) / 2);
+    lv_obj_set_width(cword_[k], r.w - split - pad);
+    lv_obj_set_style_text_align(cword_[k], LV_TEXT_ALIGN_LEFT, 0);
+    lv_obj_set_pos(cword_[k], split + pad, (r.h - wh) / 2);
+    return;
   }
-  show(cicon_[k], icon);
+  const int top = (r.h - ih - pad - wh) / 2;
+  lv_obj_set_width(cicon_[k], r.w);
+  lv_obj_set_style_text_align(cicon_[k], LV_TEXT_ALIGN_CENTER, 0);
+  lv_obj_set_pos(cicon_[k], 0, top);
   lv_obj_set_width(cword_[k], r.w);
-  lv_obj_set_pos(cword_[k], 0, top + (icon ? ih + pad : 0));
+  lv_obj_set_style_text_align(cword_[k], LV_TEXT_ALIGN_CENTER, 0);
+  lv_obj_set_pos(cword_[k], 0, top + ih + pad);
 }
 
 void DeskTile::paint() {
@@ -320,22 +309,19 @@ void DeskTile::paint() {
       {false, ICON_EYE, plugin_->text("picture")},
       {false, ICON_POWER, plugin_->text("monitor")},
       {a >= 0 && auto_on_[a], ICON_AUTO, plugin_->text("auto")},
-      {device_on_, ICON_POWER,
+      // While it starts the key keeps this second's pulse, whatever else made the tile paint.
+      {starting ? pulse_lit_ : device_on_, ICON_POWER,
        starting ? plugin_->text("starting") : device_name_.empty() ? std::string("") : roomy::plain(device_name_)},
-      {mood_chosen_ == 0, 0, mood_name_[0].empty() ? std::string("") : roomy::plain(mood_name_[0])},
-      {mood_chosen_ == 1, 0, mood_name_[1].empty() ? std::string("") : roomy::plain(mood_name_[1])},
   };
   for (int k = 0; k < C_COUNT; ++k) {
     if (!shown_ctl_[k]) continue;
-    // A mood that the layout put in the first place may be the second option (the first left empty).
-    const int lk = (k == C_MOOD0 && mood_[0].empty()) ? C_MOOD1 : k;
-    const bool accent = looks[lk].accent;
+    const bool accent = looks[k].accent;
     ui::set_fill(cblock_[k], tessera::Tone::NORMAL, accent ? theme::ACCENT : theme::TRACK);
-    if (looks[lk].icon) ui::set_text(cicon_[k], ui::icon(looks[lk].icon));
+    ui::set_text(cicon_[k], ui::icon(looks[k].icon));
     // The picture's key says "off" by fading: grey like the others, its icon and word muted.
     const bool faded = k == C_PICTURE && !picture_on_;
     ui::set_color(cicon_[k], accent ? theme::ON_ACCENT : faded ? theme::SUBTLE : theme::INK);
-    ui::set_text(cword_[k], looks[lk].word);
+    ui::set_text(cword_[k], looks[k].word);
     ui::set_color(cword_[k], accent ? theme::ON_ACCENT : faded ? theme::SUBTLE : theme::INK_SOFT);
   }
   // Nothing to show: say what is missing.
@@ -394,6 +380,7 @@ void DeskTile::tap_device() {
   if (tessera::action(boolean ? "input_boolean.turn_on" : "switch.turn_on", e)) {
     starting_.begin(esphome::millis());
     pulsing_ = true;
+    pulse_lit_ = true;
     paint();
   }
 }

@@ -2,7 +2,7 @@
 
 One full-page tile for a desk. With the monitor off it shows large keys that start a source. With the monitor on it
 shows the sources in a row with a dot for each device that runs, the monitor's keys, an **Auto** key for the chosen
-source and a key for a device such as a PC. Two mood keys sit at the bottom.
+source and a key for a device such as a PC.
 
 - **A source key** runs your script with the option in the field `quelle`. Without a script it chooses the option
   of the select directly.
@@ -29,7 +29,6 @@ source and a key for a device such as a PC. Two mood keys sit at the bottom.
    | **Auto of the 1st, 2nd and 3rd source** | A switch or input boolean that says whether that source turns the monitor on by itself. The Auto key switches the chosen source's. The large keys show an "A" while it is on. |
    | **Picture switch**, **Monitor switch** | The monitor's keys. The monitor switch also chooses the view. |
    | **Device** | A switch for a device such as a PC. Its key carries the switch's name. |
-   | **1st and 2nd mood** | A scene or a script. The key carries its name. |
 
 The order of the sources is the order of the select's options. The 1st state and the 1st Auto belong to its first
 option.
@@ -41,6 +40,5 @@ Logos, guessed from the option's name: `windows` (PC), `apple` (Mac), `playstati
 
 - The screen must be allowed to perform Home Assistant actions (Tessera turns it on when it adds the screen).
 - Up to six sources: the row shows all six, and the large keys the first four.
-- A mood stays marked until another is tapped or the tile is made again: a scene has no state that says it is on.
 - The logos are Material Design Icons (Apache 2.0), the ones Home Assistant uses too; the brands belong to their owners.
   `tools/make_logos.py` makes `components/desk_panel/logos.h` from `tools/svg/`.

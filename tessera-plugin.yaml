@@ -1,9 +1,9 @@
 # Desk panel: one full-page tile for a desk. With the monitor off it shows large keys that start a source; with the
 # monitor on, the sources with a dot for each device that runs, the monitor's keys, an Auto key for the chosen source
-# and a key that turns a device such as a PC on, and off after a question. Two mood keys under it. Every field is
+# and a key that turns a device such as a PC on, and off after a question. Every field is
 # explained in docs/MANIFEST.md of tessera-plugins.
 id: desk_panel
-version: 0.1.2
+version: 0.2.0
 api: "0.24"
 icon: desk
 maintainer: Orishas
@@ -17,7 +17,7 @@ flash_kb: 50
 
 permissions:
   home_assistant_actions: [script.turn_on, input_select.select_option, select.select_option, switch.turn_on,
-                           switch.turn_off, input_boolean.turn_on, input_boolean.turn_off, scene.turn_on]
+                           switch.turn_off, input_boolean.turn_on, input_boolean.turn_off]
 
 cards:
   - { id: confirm, name: card_name }
@@ -27,9 +27,9 @@ tiles:
     name: tile_name
     icon: desk
     sizes: { min: 2x1, max: 2x3 }
-    # Six source keys (block, logo, word, dot), three "A" marks, six other keys (block, icon, word), a note, about 4.2 KB;
-    # members (sources, layout, texts, image descriptors) about 2.5 KB.
-    memory: 7000
+    # Six source keys (block, logo, word, dot), three "A" marks, four other keys (block, icon, word), a note, about
+    # 3.6 KB; members (sources, layout, texts, image descriptors) about 2.4 KB.
+    memory: 6200
     domains: [input_select, select]
     attributes: [options]
     example: tile_example
@@ -45,5 +45,3 @@ tiles:
       - { id: picture, kind: entity, domains: [switch], label: picture, hint: picture_hint }
       - { id: power, kind: entity, domains: [switch], label: power, hint: power_hint }
       - { id: device, kind: entity, domains: [switch, input_boolean], label: device, hint: device_hint }
-      - { id: mood_1, kind: entity, domains: [scene, script], label: mood_1, hint: mood_hint }
-      - { id: mood_2, kind: entity, domains: [scene, script], label: mood_2, hint: mood_hint }

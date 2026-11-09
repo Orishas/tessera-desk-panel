@@ -20,7 +20,7 @@ static int count_sources(const Layout &l) {
     if (int(l.slots[i].key) >= int(Key::SOURCE0) && int(l.slots[i].key) < int(Key::SOURCE0) + 6) ++n;
   return n;
 }
-static Have full(int sources, bool tall = true) { return Have{sources, true, true, true, true, 2, tall}; }
+static Have full(int sources, bool tall = true) { return Have{sources, true, true, true, true, tall}; }
 
 static void test_running_states() {
   for (const char *s : {"on", "home", "playing", "paused", "idle"}) assert(is_running(s));
@@ -45,12 +45,12 @@ static void test_view_without_power() {
 
 static void test_layout_rest_tall_four() {
   const Layout l = layout_rest(480, 480, full(4), 8);
-  assert(l.count == 7);
+  assert(l.count == 5);   // four sources two by two, the device under them over the whole width
   const Slot *s0 = find(l, Key::SOURCE0);
   assert(s0 && s0->r.x == 0 && s0->r.y == 0 && s0->r.w == 236);
   assert(l.slots[l.count - 1].key == Key::DEVICE);
   const Rect d = l.slots[l.count - 1].r;
-  assert(d.x + d.w == 480);
+  assert(d.x == 0 && d.w == 480 && d.y + d.h == 480);
 }
 
 static void test_layout_rest_caps_at_four() {
@@ -101,7 +101,7 @@ static void test_starting_blocks_retap() {
   assert(!s.active(10, false));   // not begun: a tap may act
   s.begin(10);
   assert(s.active(20, false));    // begun, device still off: the tile ignores a second tap
-  assert(s.lit(2) && !s.lit(3));
+  assert(s.lit(10) && s.lit(1009) && !s.lit(1010) && s.lit(2010));   // counted from the tap, not the clock
 }
 
 static void test_guess_logo() {
@@ -113,19 +113,23 @@ static void test_guess_logo() {
 }
 
 static void test_layout_without_bottom_fills() {
-  const Have bare{4, false, false, false, false, 0, true};
+  const Have bare{4, false, false, false, false, true};
   const Layout r = layout_rest(480, 480, bare, 8);
   int bottom = 0;
   for (int i = 0; i < r.count; ++i) bottom = r.slots[i].r.y + r.slots[i].r.h > bottom ? r.slots[i].r.y + r.slots[i].r.h : bottom;
   assert(bottom == 480);
-  const Layout w = layout_work(480, 480, Have{4, true, true, false, false, 0, true}, 8);
+  const Layout w = layout_work(480, 480, Have{4, true, true, false, false, true}, 8);
   bottom = 0;
   for (int i = 0; i < w.count; ++i) bottom = w.slots[i].r.y + w.slots[i].r.h > bottom ? w.slots[i].r.y + w.slots[i].r.h : bottom;
   assert(bottom == 480);
+  // WORK without a key for the second row: the sources take the height, no empty band.
+  const Layout s = layout_work(480, 480, bare, 8);
+  assert(s.count == 4);
+  for (int i = 0; i < s.count; ++i) assert(s.slots[i].r.y == 0 && s.slots[i].r.h == 480);
 }
 
 static void test_relayout_on_auto_change() {
-  const Have mac{4, true, true, true, true, 2, true}, sw{4, true, true, false, true, 2, true};
+  const Have mac{4, true, true, true, true, true}, sw{4, true, true, false, true, true};
   assert(needs_relayout(mac, View::WORK, sw, View::WORK));
   assert(needs_relayout(sw, View::WORK, mac, View::WORK));
   assert(!needs_relayout(mac, View::WORK, mac, View::WORK));
@@ -136,7 +140,7 @@ static void test_relayout_on_auto_change() {
 }
 
 static void test_layout_empty_without_sources() {
-  const Have none{0, true, true, true, true, 2, true};
+  const Have none{0, true, true, true, true, true};
   assert(layout_rest(480, 480, none, 8).count == 0);
   assert(layout_work(480, 480, none, 8).count == 0);
   assert(hit(layout_work(480, 480, none, 8), 240, 400) == Key::NONE);
@@ -150,7 +154,7 @@ static void test_source_lit_rest_pending() {
 }
 
 static void test_layout_one_row_only_sources() {
-  Have one{4, true, true, true, true, 2, false};
+  Have one{4, true, true, true, true, false};
   one.rows = 1;
   const Layout r = layout_rest(480, 160, one, 8), w = layout_work(480, 160, one, 8);
   assert(r.count == 4 && w.count == 4);
@@ -162,18 +166,23 @@ static void test_layout_one_row_only_sources() {
 }
 
 static void test_layout_two_rows_fits_everything() {
-  Have two{4, true, true, true, true, 2, false};
+  Have two{4, true, true, true, true, false};
   two.rows = 2;
   const Layout r = layout_rest(480, 310, two, 8);
-  // REST: the four sources side by side on top, moods and the device under them.
+  // REST: the four sources side by side on top, the device under them over the whole width.
   const Slot *s0 = find(r, Key::SOURCE0), *s3 = find(r, Key(3));
-  const Slot *d = find(r, Key::DEVICE), *m0 = find(r, Key::MOOD0), *m1 = find(r, Key::MOOD1);
-  assert(s0 && s3 && d && m0 && m1);
+  const Slot *d = find(r, Key::DEVICE);
+  assert(r.count == 5 && s0 && s3 && d);
   assert(s0->r.y == 0 && s3->r.y == 0 && s3->r.x + s3->r.w == 480);
-  assert(d->r.y > s0->r.y + s0->r.h && m0->r.y == d->r.y && d->r.x + d->r.w == 480);
-  // WORK: the moods too.
+  assert(d->r.y > s0->r.y + s0->r.h && d->r.x == 0 && d->r.w == 480 && d->r.y + d->r.h == 310);
+  // REST without a device: two by two over the whole height.
+  Have plain = two;
+  plain.device = false;
+  const Layout g = layout_rest(480, 310, plain, 8);
+  assert(g.count == 4 && find(g, Key(3))->r.y + find(g, Key(3))->r.h == 310);
+  // WORK: two rows, sources and the four keys.
   const Layout w = layout_work(480, 310, two, 8);
-  assert(find(w, Key::MOOD0) && find(w, Key::MOOD1) && find(w, Key::DEVICE) && find(w, Key::AUTO));
+  assert(w.count == 8 && find(w, Key::DEVICE) && find(w, Key::AUTO));
   int bottom = 0;
   for (int i = 0; i < w.count; ++i) bottom = std::max(bottom, w.slots[i].r.y + w.slots[i].r.h);
   assert(bottom == 310);

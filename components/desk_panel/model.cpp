@@ -57,25 +57,22 @@ Layout layout_rest(int w, int h, const Have &have, int gap) {
   if (have.sources <= 0) return l;   // nothing shows, so nothing takes a tap
   const int n = have.sources < REST_SOURCES ? have.sources : REST_SOURCES;
   if (have.rows == 1) return one_row(w, h, n, gap);
-  const int cw = (w - gap) / 2;
-  Key bottom[3];
-  int m = 0;
-  for (int i = 0; i < have.moods && i < 2; ++i) bottom[m++] = Key(int(Key::MOOD0) + i);
-  if (have.device) bottom[m++] = Key::DEVICE;
-  // Two rows high (2x2, the largest a plugin's tile gets on a 2x3 grid): the sources side by side on top, moods and
-  // device under them.
-  if (!have.tall && have.rows == 2 && m > 0) {
-    const int parts[2] = {3, 2};
+  const Key device[1] = {Key::DEVICE};
+  // Two rows high (2x2, the largest a plugin's tile gets on a 2x3 grid) with a device: the sources side by side on
+  // top, the device's key under them over the whole width.
+  if (!have.tall && have.device) {
+    const int parts[2] = {2, 1};
     int two[2];
     heights(h, gap, parts, 2, two);
     Key keys[REST_SOURCES];
     for (int k = 0; k < n; ++k) keys[k] = source(k);
     row(l, keys, n, 0, w, two[0], gap);
-    row(l, bottom, m, two[0] + gap, w, two[1], gap);
+    row(l, device, 1, two[0] + gap, w, two[1], gap);
     return l;
   }
-  // A tall tile keeps its third row only for keys to put there; without, the sources take the height.
-  const bool third = have.tall && m > 0;
+  // Two by two. A tall tile has a third row for the device; without a device the sources take the height.
+  const bool third = have.tall && have.device;
+  const int cw = (w - gap) / 2;
   int rh[3];
   if (third) {
     const int parts[3] = {2, 2, 1};
@@ -84,16 +81,11 @@ Layout layout_rest(int w, int h, const Have &have, int gap) {
     const int parts[2] = {1, 1};
     heights(h, gap, parts, 2, rh);
   }
-  auto cell = [&](Key k, int i) {
-    const int c = i % 2, r = i / 2;
-    add(l, k, c ? cw + gap : 0, r ? rh[0] + gap : 0, c ? w - cw - gap : cw, rh[r]);
-  };
-  for (int k = 0; k < n; ++k) cell(source(k), k);
-  if (third) {
-    row(l, bottom, m, rh[0] + rh[1] + 2 * gap, w, rh[2], gap);
-  } else if (have.device && n < REST_SOURCES) {
-    cell(Key::DEVICE, n);
+  for (int k = 0; k < n; ++k) {
+    const int c = k % 2, r = k / 2;
+    add(l, source(k), c ? cw + gap : 0, r ? rh[0] + gap : 0, c ? w - cw - gap : cw, rh[r]);
   }
+  if (third) row(l, device, 1, rh[0] + rh[1] + 2 * gap, w, rh[2], gap);
   return l;
 }
 
@@ -102,32 +94,20 @@ Layout layout_work(int w, int h, const Have &have, int gap) {
   if (have.sources <= 0) return l;   // nothing shows, so nothing takes a tap
   const int n = have.sources < MAX_SOURCES ? have.sources : MAX_SOURCES;
   if (have.rows == 1) return one_row(w, h, n, gap);
-  // The moods get a row of their own on a tile two or three rows high.
-  const bool third = (have.tall || have.rows >= 2) && have.moods > 0;
-  int rh[3];
-  if (third) {
-    const int parts[3] = {4, 3, 2};
-    heights(h, gap, parts, 3, rh);
-  } else {
-    const int parts[2] = {4, 3};
-    heights(h, gap, parts, 2, rh);
-  }
-  Key keys[MAX_SOURCES];
-  for (int k = 0; k < n; ++k) keys[k] = source(k);
-  row(l, keys, n, 0, w, rh[0], gap);
   Key mid[4];
   int m = 0;
   if (have.picture) mid[m++] = Key::PICTURE;
   if (have.power) mid[m++] = Key::POWER;
   if (have.autokey) mid[m++] = Key::AUTO;
   if (have.device) mid[m++] = Key::DEVICE;
+  if (m == 0) return one_row(w, h, n, gap);   // no key for a second row: the sources take the height
+  const int parts[2] = {4, 3};
+  int rh[2];
+  heights(h, gap, parts, 2, rh);
+  Key keys[MAX_SOURCES];
+  for (int k = 0; k < n; ++k) keys[k] = source(k);
+  row(l, keys, n, 0, w, rh[0], gap);
   row(l, mid, m, rh[0] + gap, w, rh[1], gap);
-  if (third) {
-    Key moods[2];
-    int c = 0;
-    for (int i = 0; i < have.moods && i < 2; ++i) moods[c++] = Key(int(Key::MOOD0) + i);
-    row(l, moods, c, rh[0] + rh[1] + 2 * gap, w, rh[2], gap);
-  }
   return l;
 }
 
@@ -142,7 +122,7 @@ Key hit(const Layout &l, int x, int y) {
 bool needs_relayout(const Have &was, View was_view, const Have &now, View now_view) {
   return was_view != now_view || was.sources != now.sources || was.autokey != now.autokey ||
          was.picture != now.picture || was.power != now.power || was.device != now.device ||
-         was.moods != now.moods || was.tall != now.tall || was.rows != now.rows;
+         was.tall != now.tall || was.rows != now.rows;
 }
 
 bool source_lit(View view, int i, int pending, int active) {
@@ -159,6 +139,6 @@ bool Starting::active(uint32_t now_ms, bool device_on) {
   return on;
 }
 
-bool Starting::lit(uint32_t epoch) const { return epoch % 2 == 0; }
+bool Starting::lit(uint32_t now_ms) const { return (now_ms - since_ms) / 1000 % 2 == 0; }
 
 }  // namespace esphome::desk_panel

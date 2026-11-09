@@ -2,6 +2,9 @@
 
 Stand: 2026-11-09 · Repo: `Orishas/tessera-desk-panel` · Plugin-API `0.24`
 
+> Seit 0.2.0 gibt es die Stimmungstasten (`mood_1`, `mood_2`) nicht mehr. Was dieser Entwurf dazu sagt, gilt nur
+> bis 0.1.2; in der Ruhe-Ansicht liegt die Gerätetaste seitdem über die ganze Breite.
+
 ## Ziel
 
 Eine ganzseitige Kachel für Desk Control, die von selbst zeigt, was am Schreibtisch gerade dran ist:

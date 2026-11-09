@@ -5,7 +5,7 @@
 namespace esphome::desk_panel {
 
 // The desk: with the monitor off (REST) large keys that start a source, with it on (WORK) the sources in a row, the
-// monitor's keys, Auto and the device under them. Two moods at the bottom of a tall tile. The decisions are model.h's.
+// monitor's keys, Auto and the device under them. The decisions are model.h's.
 class DeskTile : public tessera::Tile {
  public:
   explicit DeskTile(const tessera::Plugin *plugin) : plugin_(plugin) {}
@@ -21,7 +21,7 @@ class DeskTile : public tessera::Tile {
     char logo[33];
   };
   // A key that is not a source: a block with an icon over a word.
-  enum Ctl { C_PICTURE, C_POWER, C_AUTO, C_DEVICE, C_MOOD0, C_MOOD1, C_COUNT };
+  enum Ctl { C_PICTURE, C_POWER, C_AUTO, C_DEVICE, C_COUNT };
 
   void build();   // lays out the current view and shows the keys it has
   void paint();   // fills, colours and words, without laying out again
@@ -42,11 +42,11 @@ class DeskTile : public tessera::Tile {
   bool tall_ = true;
   int rows_ = 3;
   tessera::Text entity_, script_, picture_, power_, device_, chosen_;
-  tessera::Text status_[3], auto_[3], mood_[2];
-  tessera::Text device_name_, mood_name_[2];
+  tessera::Text status_[3], auto_[3];
+  tessera::Text device_name_;
 
   Source src_[MAX_SOURCES]{};
-  int count_ = 0, pending_ = -1, mood_chosen_ = -1;
+  int count_ = 0, pending_ = -1;
   uint32_t pending_at_ = 0;
   bool built_ = false;
   Have laid_{};            // what the current layout was made for
@@ -56,7 +56,7 @@ class DeskTile : public tessera::Tile {
   View view_ = View::REST;
   Layout layout_;
   Starting starting_;
-  bool pulsing_ = false;
+  bool pulsing_ = false, pulse_lit_ = false;   // "Starting ..." shows, and whether its key is lit this second
 
   lv_obj_t *sblock_[MAX_SOURCES]{}, *slogo_[MAX_SOURCES]{}, *sword_[MAX_SOURCES]{}, *sdot_[MAX_SOURCES]{},
       *sauto_[MAX_SOURCES]{};
