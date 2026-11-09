@@ -18,6 +18,7 @@ static constexpr uint32_t PENDING_MS = 15000;
 static constexpr uint32_t ICON_EYE = 0xF0208;
 static constexpr uint32_t ICON_POWER = 0xF0425;
 static constexpr uint32_t ICON_AUTO = 0xF18F2;
+static constexpr uint32_t ICON_MONITOR = 0xF0379;
 
 static void show(lv_obj_t *o, bool on) {
   if (!o) return;
@@ -56,7 +57,10 @@ void DeskTile::create(const tessera::TileContext &c) {
 
   for (int i = 0; i < MAX_SOURCES; ++i) {
     sblock_[i] = key_block(c.parent);
-    // The logo, the word, the dot and the "A" lie in their key's block, so they move and colour with it.
+    // The logo, the word, the dot and the Auto mark lie in their key's block, so they move and colour with it.
+    // The border is always there, in the block's own colour: the frame of the chosen source moves nothing.
+    lv_obj_set_style_border_width(sblock_[i], ui::px(2), 0);
+    lv_obj_set_style_border_opa(sblock_[i], LV_OPA_COVER, 0);
     slogo_[i] = lv_image_create(sblock_[i]);
     lv_obj_set_style_image_recolor_opa(slogo_[i], LV_OPA_COVER, 0);
     lv_obj_remove_flag(slogo_[i], LV_OBJ_FLAG_CLICKABLE);
@@ -66,8 +70,8 @@ void DeskTile::create(const tessera::TileContext &c) {
     lv_obj_set_style_radius(sdot_[i], LV_RADIUS_CIRCLE, 0);
     lv_obj_set_size(sdot_[i], ui::mm(2), ui::mm(2));
     if (i < 3) {   // only the first three sources have an Auto option
-      sauto_[i] = ui::label(sblock_[i], Font::BODY, theme::MUTED);
-      ui::set_text(sauto_[i], "A");
+      sauto_[i] = ui::label(sblock_[i], Font::ICON_SMALL, theme::INK_SOFT);
+      ui::set_text(sauto_[i], ui::icon(ICON_AUTO));
     }
     show(sblock_[i], false);
   }
@@ -78,6 +82,9 @@ void DeskTile::create(const tessera::TileContext &c) {
     lv_obj_set_style_text_align(cword_[k], LV_TEXT_ALIGN_CENTER, 0);
     show(cblock_[k], false);
   }
+  cdot_ = ui::block(cblock_[C_DEVICE], theme::ACCENT);
+  lv_obj_set_style_radius(cdot_, LV_RADIUS_CIRCLE, 0);
+  lv_obj_set_size(cdot_, ui::mm(2), ui::mm(2));
   note_ = ui::label(c.parent, Font::BODY, theme::MUTED);
   lv_obj_set_width(note_, width_);
   lv_obj_set_style_text_align(note_, LV_TEXT_ALIGN_CENTER, 0);
@@ -113,6 +120,10 @@ void DeskTile::on_state(JsonObjectConst data) {
   if (pending_ >= count || (pending_ >= 0 && roomy::same(chosen_, std::string(src_[pending_].value)))) pending_ = -1;
   // The device is there: "Starting ..." ends with this state, not a second later.
   if (pulsing_ && !starting_.active(esphome::millis(), device_on_)) pulsing_ = false;
+  if (starting_src_ >= count ||
+      (starting_src_ >= 0 && !src_starting_.active(esphome::millis(), status_on_[starting_src_])))
+    starting_src_ = -1;
+  toggled_ = nullptr;   // Home Assistant has spoken: the keys show its states
 
   bool has_status[3];
   for (int i = 0; i < 3; ++i) has_status[i] = !status_[i].empty();
@@ -127,24 +138,30 @@ void DeskTile::refresh() {
 }
 
 void DeskTile::on_tick(uint32_t) {
-  if (pending_ >= 0 && esphome::millis() - pending_at_ > PENDING_MS) {
+  const uint32_t now = esphome::millis();
+  if (pending_ >= 0 && now - pending_at_ > PENDING_MS) {
     pending_ = -1;
     refresh();   // the chosen source is the select's again: its Auto key may come or go
   }
-  if (!pulsing_) return;
-  if (!starting_.active(esphome::millis(), device_on_)) {
-    pulsing_ = false;   // the device is there, or it took too long: the key shows its state again
+  // No answer to a switch: the key shows what Home Assistant last said.
+  if (toggled_ && unconfirmed(now, toggled_at_)) {
+    *toggled_ = !*toggled_;
+    toggled_ = nullptr;
     paint();
-    return;
   }
-  // "Starting ...": the device key pulses once a second, painted here (no animation of its own). Counted from the
-  // tap, so it pulses on a screen whose clock is not set too.
-  const bool lit = starting_.lit(esphome::millis());
-  pulse_lit_ = lit;
-  if (!shown_ctl_[C_DEVICE]) return;
-  ui::set_fill(cblock_[C_DEVICE], tessera::Tone::NORMAL, lit ? theme::ACCENT : theme::TRACK);
-  ui::set_color(cicon_[C_DEVICE], lit ? theme::ON_ACCENT : theme::INK);
-  ui::set_color(cword_[C_DEVICE], lit ? theme::ON_ACCENT : theme::INK_SOFT);
+  if (!pulsing_ && starting_src_ < 0) return;
+  // "Starting ...": the dot of what starts blinks once a second, painted here (no animation of its own). Counted
+  // from the tap, so it blinks on a screen whose clock is not set too.
+  if (pulsing_) {
+    if (starting_.active(now, device_on_)) {
+      pulse_lit_ = starting_.lit(now);
+    } else {
+      pulsing_ = false;   // the device is there, or it took too long: the key shows its state again
+      paint();
+    }
+  }
+  if (starting_src_ >= 0 && !src_starting_.active(now, status_on_[starting_src_])) starting_src_ = -1;
+  paint_dots();
 }
 
 void DeskTile::on_tap() {
@@ -227,7 +244,8 @@ void DeskTile::place_source(int i, const Rect &r) {
   // REST: a large logo, 45 % of the key's shorter side. WORK: as large as the key leaves beside its word.
   const int side = std::max(0, rest ? std::min(r.w, r.h) * 45 / 100 : std::min(r.w - 2 * pad, r.h - lh - 3 * pad));
   const uint8_t *alpha = src_[i].logo[0] && side > 0 ? logo_alpha(src_[i].logo) : nullptr;
-  const int top = (r.h - (alpha ? side + pad : 0) - lh) / 2;
+  const int b = ui::px(2);   // the block's border: its children sit inside it
+  const int top = (r.h - (alpha ? side + pad : 0) - lh) / 2 - b;
   if (alpha) {
     // The mask at the key's size, made again only when the size or the logo changed.
     if (made_side_[i] != side || made_logo_[i] != alpha) {
@@ -249,22 +267,28 @@ void DeskTile::place_source(int i, const Rect &r) {
       lv_image_set_src(slogo_[i], &image_[i]);
       lv_obj_invalidate(slogo_[i]);
     }
-    lv_obj_set_pos(slogo_[i], (r.w - side) / 2, top);
+    lv_obj_set_pos(slogo_[i], (r.w - side) / 2 - b, top);
     lv_obj_set_size(slogo_[i], side, side);
   }
   show(slogo_[i], alpha != nullptr);
   lv_obj_set_pos(sword_[i], 0, alpha ? top + side + pad : top);
-  lv_obj_set_width(sword_[i], r.w);
+  lv_obj_set_width(sword_[i], r.w - 2 * b);
   ui::set_text(sword_[i], src_[i].value);
   const int inset = ui::px(8), dot = ui::mm(2);
-  lv_obj_set_pos(sdot_[i], r.w - inset - dot, inset);
-  if (sauto_[i]) lv_obj_set_pos(sauto_[i], inset, inset);   // top left; the dot is top right
+  lv_obj_set_pos(sdot_[i], r.w - inset - dot - b, inset - b);
+  if (sauto_[i]) lv_obj_set_pos(sauto_[i], inset - b, inset - b);   // top left; the dot is top right
+  // The mark shows only where it touches neither the logo nor the word: a small key goes without.
+  const int mark_end = inset - b + ui::line_height(Font::ICON_SMALL);
+  mark_fits_[i] = mark_end <= top || (alpha && mark_end <= (r.w - side) / 2 - b);
 }
 
 void DeskTile::place_ctl(Ctl k, const Rect &r) {
   lv_obj_set_pos(cblock_[k], r.x, r.y);
   lv_obj_set_size(cblock_[k], r.w, r.h);
   const int ih = ui::line_height(Font::ICON_SMALL), wh = ui::line_height(Font::BODY), pad = ui::px(4);
+  // The device's dot is top right, as a source's; its icon and word keep clear of it on both sides.
+  const int m = k == C_DEVICE ? ui::px(8) + ui::mm(2) + pad : 0;
+  if (k == C_DEVICE) lv_obj_set_pos(cdot_, r.w - ui::px(8) - ui::mm(2), ui::px(8));
   if (r.h < ih + pad + wh + 2 * pad) {
     // Too low for the icon over the word (the device's row over the whole width): the two side by side, meeting a
     // little left of the middle so a short word balances the icon.
@@ -272,63 +296,73 @@ void DeskTile::place_ctl(Ctl k, const Rect &r) {
     lv_obj_set_width(cicon_[k], split - pad);
     lv_obj_set_style_text_align(cicon_[k], LV_TEXT_ALIGN_RIGHT, 0);
     lv_obj_set_pos(cicon_[k], 0, (r.h - ih) / 2);
-    lv_obj_set_width(cword_[k], r.w - split - pad);
+    lv_obj_set_width(cword_[k], r.w - split - pad - m);
     lv_obj_set_style_text_align(cword_[k], LV_TEXT_ALIGN_LEFT, 0);
     lv_obj_set_pos(cword_[k], split + pad, (r.h - wh) / 2);
     return;
   }
   const int top = (r.h - ih - pad - wh) / 2;
-  lv_obj_set_width(cicon_[k], r.w);
+  lv_obj_set_width(cicon_[k], r.w - 2 * m);
   lv_obj_set_style_text_align(cicon_[k], LV_TEXT_ALIGN_CENTER, 0);
-  lv_obj_set_pos(cicon_[k], 0, top);
-  lv_obj_set_width(cword_[k], r.w);
+  lv_obj_set_pos(cicon_[k], m, top);
+  lv_obj_set_width(cword_[k], r.w - 2 * m);
   lv_obj_set_style_text_align(cword_[k], LV_TEXT_ALIGN_CENTER, 0);
-  lv_obj_set_pos(cword_[k], 0, top + ih + pad);
+  lv_obj_set_pos(cword_[k], m, top + ih + pad);
 }
 
 void DeskTile::paint() {
   const int on = active();
-  const bool rest = view_ == View::REST;
   for (int i = 0; i < MAX_SOURCES; ++i) {
     if (!shown_src_[i]) continue;
     const bool chosen = source_lit(view_, i, pending_, on);
     ui::set_fill(sblock_[i], tessera::Tone::NORMAL, chosen ? theme::ACCENT : theme::TRACK);
+    // REST: a frame around the source the monitor shows when it comes on.
+    const bool framed = source_framed(view_, i, pending_, on);
+    lv_obj_set_style_border_color(sblock_[i], ui::color(chosen || framed ? theme::ACCENT : theme::TRACK), 0);
     ui::set_color(sword_[i], chosen ? theme::ON_ACCENT : theme::INK_SOFT);
     lv_obj_set_style_image_recolor(slogo_[i], ui::color(chosen ? theme::ON_ACCENT : theme::INK), 0);
-    const bool running = i < 3 && !status_[i].empty() && status_on_[i];
     ui::set_fill(sdot_[i], tessera::Tone::NORMAL, chosen ? theme::ON_ACCENT : theme::ACCENT);
-    show(sdot_[i], running);
-    if (sauto_[i]) ui::set_color(sauto_[i], theme::MUTED);
-    show(sauto_[i], rest && i < 3 && !auto_[i].empty() && auto_on_[i]);
+    // The Auto mark, in both views: this source turns the monitor on by itself.
+    if (sauto_[i]) ui::set_color(sauto_[i], chosen ? theme::ON_ACCENT : theme::INK_SOFT);
+    show(sauto_[i], i < 3 && mark_fits_[i] && !auto_[i].empty() && auto_on_[i]);
   }
   const int a = auto_index();
-  const bool starting = pulsing_;
-  struct Look { bool accent; uint32_t icon; std::string word; };
+  const bool auto_on = a >= 0 && auto_on_[a];
+  // The keys stay grey, the accent is the chosen source's: a switch that is off has a muted icon and says so.
+  struct Look { bool off; uint32_t icon; std::string word; };
   const Look looks[C_COUNT] = {
-      // Picture and monitor stay grey: in WORK the monitor is on, and a row of blue keys says nothing.
-      {false, ICON_EYE, plugin_->text("picture")},
-      {false, ICON_POWER, plugin_->text("monitor")},
-      {a >= 0 && auto_on_[a], ICON_AUTO, plugin_->text("auto")},
-      // While it starts the key keeps this second's pulse, whatever else made the tile paint.
-      {starting ? pulse_lit_ : device_on_, ICON_POWER,
-       starting ? plugin_->text("starting") : device_name_.empty() ? std::string("") : roomy::plain(device_name_)},
+      {!picture_on_, ICON_EYE, plugin_->text(picture_on_ ? "picture" : "picture_off")},
+      {false, ICON_MONITOR, plugin_->text("monitor")},
+      {!auto_on, ICON_AUTO, plugin_->text(auto_on ? "auto" : "auto_off")},
+      // The device says on with its dot, as a source does, and "Starting ..." with the dot blinking.
+      {false, ICON_POWER,
+       pulsing_ ? plugin_->text("starting") : device_name_.empty() ? std::string("") : roomy::plain(device_name_)},
   };
   for (int k = 0; k < C_COUNT; ++k) {
     if (!shown_ctl_[k]) continue;
-    const bool accent = looks[k].accent;
-    ui::set_fill(cblock_[k], tessera::Tone::NORMAL, accent ? theme::ACCENT : theme::TRACK);
+    ui::set_fill(cblock_[k], tessera::Tone::NORMAL, theme::TRACK);
     ui::set_text(cicon_[k], ui::icon(looks[k].icon));
-    // The picture's key says "off" by fading: grey like the others, its icon and word muted.
-    const bool faded = k == C_PICTURE && !picture_on_;
-    ui::set_color(cicon_[k], accent ? theme::ON_ACCENT : faded ? theme::SUBTLE : theme::INK);
+    ui::set_color(cicon_[k], looks[k].off ? theme::MUTED : theme::INK);
     ui::set_text(cword_[k], looks[k].word);
-    ui::set_color(cword_[k], accent ? theme::ON_ACCENT : faded ? theme::SUBTLE : theme::INK_SOFT);
+    ui::set_color(cword_[k], looks[k].off ? theme::MUTED : theme::INK_SOFT);
   }
+  ui::set_fill(cdot_, tessera::Tone::NORMAL, theme::ACCENT);
+  paint_dots();
   // Nothing to show: say what is missing.
   const bool empty = entity_.empty() || count_ == 0;
   ui::set_text(note_, empty ? plugin_->text("choose_select") : std::string(""));
   ui::set_color(note_, theme::MUTED);
   show(note_, empty);
+}
+
+// A dot shows while its device runs, and every other second while it starts.
+void DeskTile::paint_dots() {
+  for (int i = 0; i < MAX_SOURCES; ++i) {
+    if (!shown_src_[i]) continue;
+    const bool running = i < 3 && !status_[i].empty() && status_on_[i];
+    show(sdot_[i], running || (i == starting_src_ && src_starting_.lit(esphome::millis())));
+  }
+  show(cdot_, shown_ctl_[C_DEVICE] && (pulsing_ ? pulse_lit_ : device_on_));
 }
 
 void DeskTile::tap_source(int i) {
@@ -349,11 +383,18 @@ void DeskTile::tap_source(int i) {
   if (sent) {
     pending_ = i;
     pending_at_ = esphome::millis();
+    // Its device is off: the dot blinks until it is there. Without a status option nothing says so, so nothing blinks.
+    starting_src_ = -1;
+    if (i < 3 && !status_[i].empty() && !status_on_[i]) {
+      src_starting_.begin(pending_at_);
+      starting_src_ = i;
+    }
     refresh();   // another source may bring or take away the Auto key
   }
 }
 
-// A switch or an input boolean, turned the other way; the key shows it at once and Home Assistant confirms.
+// A switch or an input boolean, turned the other way; the key shows it at once and Home Assistant confirms. Without
+// an answer within CONFIRM_MS the key goes back (on_tick).
 void DeskTile::tap_switch(const tessera::Text &entity, bool &on) {
   const std::string e = roomy::plain(entity);
   if (e.empty()) return;
@@ -362,6 +403,8 @@ void DeskTile::tap_switch(const tessera::Text &entity, bool &on) {
                            : (boolean ? "input_boolean.turn_on" : "switch.turn_on");
   if (tessera::action(service, e)) {
     on = !on;
+    toggled_ = &on;
+    toggled_at_ = esphome::millis();
     paint();
   }
 }

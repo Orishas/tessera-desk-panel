@@ -55,24 +55,25 @@ static Layout one_row(int w, int h, int n, int gap) {
 Layout layout_rest(int w, int h, const Have &have, int gap) {
   Layout l;
   if (have.sources <= 0) return l;   // nothing shows, so nothing takes a tap
-  const int n = have.sources < REST_SOURCES ? have.sources : REST_SOURCES;
+  const int n = have.sources < MAX_SOURCES ? have.sources : MAX_SOURCES;
   if (have.rows == 1) return one_row(w, h, n, gap);
   const Key device[1] = {Key::DEVICE};
+  Key keys[MAX_SOURCES];
+  for (int k = 0; k < n; ++k) keys[k] = source(k);
   // Two rows high (2x2, the largest a plugin's tile gets on a 2x3 grid) with a device: the sources side by side on
   // top, the device's key under them over the whole width.
   if (!have.tall && have.device) {
     const int parts[2] = {2, 1};
     int two[2];
     heights(h, gap, parts, 2, two);
-    Key keys[REST_SOURCES];
-    for (int k = 0; k < n; ++k) keys[k] = source(k);
     row(l, keys, n, 0, w, two[0], gap);
     row(l, device, 1, two[0] + gap, w, two[1], gap);
     return l;
   }
-  // Two by two. A tall tile has a third row for the device; without a device the sources take the height.
+  // Two rows of sources: two in a row up to four, three with five or six; the second row's keys share the width.
+  // A tall tile has a third row for the device; without a device the sources take the height.
   const bool third = have.tall && have.device;
-  const int cw = (w - gap) / 2;
+  const int cols = n <= 4 ? 2 : 3, first = n < cols ? n : cols;
   int rh[3];
   if (third) {
     const int parts[3] = {2, 2, 1};
@@ -81,10 +82,8 @@ Layout layout_rest(int w, int h, const Have &have, int gap) {
     const int parts[2] = {1, 1};
     heights(h, gap, parts, 2, rh);
   }
-  for (int k = 0; k < n; ++k) {
-    const int c = k % 2, r = k / 2;
-    add(l, source(k), c ? cw + gap : 0, r ? rh[0] + gap : 0, c ? w - cw - gap : cw, rh[r]);
-  }
+  row(l, keys, first, 0, w, rh[0], gap);
+  if (n > first) row(l, keys + first, n - first, rh[0] + gap, w, rh[1], gap);
   if (third) row(l, device, 1, rh[0] + rh[1] + 2 * gap, w, rh[2], gap);
   return l;
 }
@@ -128,6 +127,12 @@ bool needs_relayout(const Have &was, View was_view, const Have &now, View now_vi
 bool source_lit(View view, int i, int pending, int active) {
   return view == View::REST ? i == pending : i == active;
 }
+
+bool source_framed(View view, int i, int pending, int active) {
+  return view == View::REST && pending < 0 && i >= 0 && i == active;
+}
+
+bool unconfirmed(uint32_t now_ms, uint32_t at_ms) { return now_ms - at_ms >= CONFIRM_MS; }
 
 void Starting::begin(uint32_t now_ms) {
   since_ms = now_ms;

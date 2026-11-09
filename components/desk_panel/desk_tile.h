@@ -5,7 +5,8 @@
 namespace esphome::desk_panel {
 
 // The desk: with the monitor off (REST) large keys that start a source, with it on (WORK) the sources in a row, the
-// monitor's keys, Auto and the device under them. The decisions are model.h's.
+// monitor's keys, Auto and the device under them. The decisions are model.h's. The accent is the chosen source's
+// alone; a dot says a device runs, and a switch that is off has a muted icon and says "off".
 class DeskTile : public tessera::Tile {
  public:
   explicit DeskTile(const tessera::Plugin *plugin) : plugin_(plugin) {}
@@ -25,6 +26,7 @@ class DeskTile : public tessera::Tile {
 
   void build();   // lays out the current view and shows the keys it has
   void paint();   // fills, colours and words, without laying out again
+  void paint_dots();   // the dots alone: what runs, and what blinks while it starts
   void refresh(); // build() when the layout must change (needs_relayout), else paint()
   int active() const;        // the chosen source: the one just tapped, else the select's option; -1 none
   int auto_index() const;    // the chosen source's Auto switch, -1 none
@@ -56,7 +58,11 @@ class DeskTile : public tessera::Tile {
   View view_ = View::REST;
   Layout layout_;
   Starting starting_;
-  bool pulsing_ = false, pulse_lit_ = false;   // "Starting ..." shows, and whether its key is lit this second
+  bool pulsing_ = false, pulse_lit_ = false;   // "Starting ..." shows, and whether its dot is lit this second
+  Starting src_starting_;   // a tapped source whose device was off: its dot blinks until the device is there
+  int starting_src_ = -1;
+  bool *toggled_{};         // a switch shown the other way that Home Assistant has not confirmed yet
+  uint32_t toggled_at_ = 0;
 
   lv_obj_t *sblock_[MAX_SOURCES]{}, *slogo_[MAX_SOURCES]{}, *sword_[MAX_SOURCES]{}, *sdot_[MAX_SOURCES]{},
       *sauto_[MAX_SOURCES]{};
@@ -65,7 +71,8 @@ class DeskTile : public tessera::Tile {
   int made_side_[MAX_SOURCES]{};
   const uint8_t *made_logo_[MAX_SOURCES]{};
   bool shown_src_[MAX_SOURCES]{};
-  lv_obj_t *cblock_[C_COUNT]{}, *cicon_[C_COUNT]{}, *cword_[C_COUNT]{};
+  bool mark_fits_[MAX_SOURCES]{};   // the Auto mark has room beside the logo (not on a small key)
+  lv_obj_t *cblock_[C_COUNT]{}, *cicon_[C_COUNT]{}, *cword_[C_COUNT]{}, *cdot_{};
   bool shown_ctl_[C_COUNT]{};
   lv_obj_t *note_{};
 };

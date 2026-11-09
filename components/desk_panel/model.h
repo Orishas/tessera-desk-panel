@@ -13,8 +13,9 @@ struct Slot { Key key; Rect r; };
 struct Layout { Slot slots[16]; int count = 0; };
 
 static constexpr int MAX_SOURCES = 6;
-static constexpr int REST_SOURCES = 4;
 static constexpr uint32_t STARTING_MS = 120000;
+// How long a key shows a switch the other way before Home Assistant has said so; then it shows the old state again.
+static constexpr uint32_t CONFIRM_MS = 5000;
 
 // A state that says the device runs: on, home, playing, paused or idle. standby, unavailable and the rest do not.
 bool is_running(const char *state);
@@ -31,8 +32,14 @@ Key hit(const Layout &l, int x, int y);
 bool needs_relayout(const Have &was, View was_view, const Have &now, View now_view);
 // Whether source i is marked: in REST only the key just tapped (an answer to the finger), in WORK the chosen one.
 bool source_lit(View view, int i, int pending, int active);
+// Whether source i has a frame: in REST the chosen one (what the monitor shows when it comes on), unless a key was
+// just tapped.
+bool source_framed(View view, int i, int pending, int active);
+// A switch turned at at_ms has no answer yet and waited long enough.
+bool unconfirmed(uint32_t now_ms, uint32_t at_ms);
 
-// The device key's "Starting ...": from a tap that turned the device on until it reports on, at most STARTING_MS.
+// "Starting ...": from a tap that turned a device on (its own key, or a source whose device is off) until it reports
+// on, at most STARTING_MS. Its dot blinks meanwhile.
 struct Starting {
   uint32_t since_ms = 0;
   bool on = false;

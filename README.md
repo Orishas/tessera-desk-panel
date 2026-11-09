@@ -6,7 +6,7 @@ source and a key for a device such as a PC.
 
 - **A source key** runs your script with the option in the field `quelle`. Without a script it chooses the option
   of the select directly.
-- **The device key** turns the device on and pulses "Starting …" until the device is there (at most two minutes).
+- **The device key** turns the device on and says "Starting …" with a blinking dot until the device is there (at most two minutes). A dot on the key says the device is on.
   While the device is on, the key asks first, on a card: Cancel or Shut down.
 - **The view follows the monitor switch.** Off is the large start keys, on is the row. Without a monitor switch,
   the view shows the row while any source with a state runs.
@@ -26,7 +26,7 @@ source and a key for a device such as a PC.
    |---|---|
    | **Script** | Runs with the option as `quelle` (the script's field must be called so). |
    | **State of the 1st, 2nd and 3rd source** | A device that is on while that source runs (`binary_sensor`, `media_player`, `switch` or `device_tracker`). Its key gets a dot. A media player in `standby` counts as off. |
-   | **Auto of the 1st, 2nd and 3rd source** | A switch or input boolean that says whether that source turns the monitor on by itself. The Auto key switches the chosen source's. The large keys show an "A" while it is on. |
+   | **Auto of the 1st, 2nd and 3rd source** | A switch or input boolean that says whether that source turns the monitor on by itself. The Auto key switches the chosen source's. A source key shows a small Auto mark while it is on. |
    | **Picture switch**, **Monitor switch** | The monitor's keys. The monitor switch also chooses the view. |
    | **Device** | A switch for a device such as a PC. Its key carries the switch's name. |
 
@@ -39,6 +39,6 @@ Logos, guessed from the option's name: `windows` (PC), `apple` (Mac), `playstati
 ## Good to know
 
 - The screen must be allowed to perform Home Assistant actions (Tessera turns it on when it adds the screen).
-- Up to six sources: the row shows all six, and the large keys the first four.
+- Up to six sources, with the monitor on or off.
 - The logos are Material Design Icons (Apache 2.0), the ones Home Assistant uses too; the brands belong to their owners.
   `tools/make_logos.py` makes `components/desk_panel/logos.h` from `tools/svg/`.

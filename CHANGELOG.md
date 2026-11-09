@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.0 - 2026-11-09
+- The accent is the chosen source's alone. The other keys stay grey: the device says on with a dot, as a source
+  does, and a switch that is off has a muted icon and says "Picture off" or "Auto off".
+- With the monitor off, a frame marks the source it shows when it comes on.
+- A tapped source whose device is off blinks its dot until the device is there (at most two minutes).
+- The monitor's key has a monitor as its icon, not the device key's power sign.
+- The Auto mark is an icon, and shows with the monitor on too.
+- A switch that Home Assistant does not answer within five seconds goes back to what it was.
+- With the monitor off all six sources show, not the first four.
+
 ## 0.2.0 - 2026-11-09
 - The two mood keys are gone, with their options and the permission `scene.turn_on`. With the monitor off the
   device's key takes the whole width under the sources.

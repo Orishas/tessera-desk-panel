@@ -53,10 +53,33 @@ static void test_layout_rest_tall_four() {
   assert(d.x == 0 && d.w == 480 && d.y + d.h == 480);
 }
 
-static void test_layout_rest_caps_at_four() {
+static void test_layout_rest_shows_six() {
+  // Tall with a device: three by two, the device under them.
   const Layout l = layout_rest(480, 480, full(6), 8);
-  assert(count_sources(l) == 4);
-  for (int k = 0; k < 4; ++k) assert(find(l, Key(int(Key::SOURCE0) + k)));
+  assert(count_sources(l) == 6 && find(l, Key::DEVICE));
+  const Slot *s0 = find(l, Key::SOURCE0), *s2 = find(l, Key(2)), *s3 = find(l, Key(3)), *s5 = find(l, Key(5));
+  assert(s0->r.y == 0 && s2->r.y == 0 && s2->r.x + s2->r.w == 480);
+  assert(s3->r.y == s0->r.h + 8 && s3->r.x == 0 && s5->r.x + s5->r.w == 480);
+  // Five: the second row's two keys share the width.
+  const Layout f = layout_rest(480, 480, full(5), 8);
+  assert(count_sources(f) == 5 && find(f, Key(4))->r.x + find(f, Key(4))->r.w == 480);
+  // Two rows high with a device: all six side by side.
+  const Layout r = layout_rest(480, 310, full(6, false), 8);
+  assert(count_sources(r) == 6 && find(r, Key(5))->r.y == 0);
+}
+
+static void test_source_framed() {
+  assert(source_framed(View::REST, 1, -1, 1));    // REST: the select's choice has a frame
+  assert(!source_framed(View::REST, 0, -1, 1));
+  assert(!source_framed(View::REST, 2, 2, 2));    // the key just tapped is lit, not framed
+  assert(!source_framed(View::WORK, 1, -1, 1));   // WORK marks the chosen one by its fill
+  assert(!source_framed(View::REST, 0, -1, -1));
+}
+
+static void test_unconfirmed() {
+  assert(!unconfirmed(1000, 1000));
+  assert(!unconfirmed(1000 + CONFIRM_MS - 1, 1000));
+  assert(unconfirmed(1000 + CONFIRM_MS, 1000));
 }
 
 static void test_layout_work_no_auto() {
@@ -193,7 +216,9 @@ int main() {
   test_view_follows_power();
   test_view_without_power();
   test_layout_rest_tall_four();
-  test_layout_rest_caps_at_four();
+  test_layout_rest_shows_six();
+  test_source_framed();
+  test_unconfirmed();
   test_layout_work_no_auto();
   test_hit_gap_is_none();
   test_starting_ends_on_device_on();
