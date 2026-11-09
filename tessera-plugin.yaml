@@ -3,7 +3,7 @@
 # and a key that turns a device such as a PC on, and off after a question. Two mood keys under it. Every field is
 # explained in docs/MANIFEST.md of tessera-plugins.
 id: desk_panel
-version: 0.1.1
+version: 0.1.2
 api: "0.24"
 icon: desk
 maintainer: Orishas

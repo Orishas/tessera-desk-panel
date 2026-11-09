@@ -62,6 +62,18 @@ Layout layout_rest(int w, int h, const Have &have, int gap) {
   int m = 0;
   for (int i = 0; i < have.moods && i < 2; ++i) bottom[m++] = Key(int(Key::MOOD0) + i);
   if (have.device) bottom[m++] = Key::DEVICE;
+  // Two rows high (2x2, the largest a plugin's tile gets on a 2x3 grid): the sources side by side on top, moods and
+  // device under them.
+  if (!have.tall && have.rows == 2 && m > 0) {
+    const int parts[2] = {3, 2};
+    int two[2];
+    heights(h, gap, parts, 2, two);
+    Key keys[REST_SOURCES];
+    for (int k = 0; k < n; ++k) keys[k] = source(k);
+    row(l, keys, n, 0, w, two[0], gap);
+    row(l, bottom, m, two[0] + gap, w, two[1], gap);
+    return l;
+  }
   // A tall tile keeps its third row only for keys to put there; without, the sources take the height.
   const bool third = have.tall && m > 0;
   int rh[3];
@@ -90,7 +102,8 @@ Layout layout_work(int w, int h, const Have &have, int gap) {
   if (have.sources <= 0) return l;   // nothing shows, so nothing takes a tap
   const int n = have.sources < MAX_SOURCES ? have.sources : MAX_SOURCES;
   if (have.rows == 1) return one_row(w, h, n, gap);
-  const bool third = have.tall && have.moods > 0;
+  // The moods get a row of their own on a tile two or three rows high.
+  const bool third = (have.tall || have.rows >= 2) && have.moods > 0;
   int rh[3];
   if (third) {
     const int parts[3] = {4, 3, 2};

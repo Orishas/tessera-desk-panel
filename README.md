@@ -15,8 +15,9 @@ source and a key for a device such as a PC. Two mood keys sit at the bottom.
 
 1. In Tessera, open **Plugins**, choose **Add with a link** and paste `https://github.com/Orishas/tessera-desk-panel`.
 2. Add the plugin to a screen. The screen builds once.
-3. In **Layout**, place the **Desk panel** tile from the library's Plugins group. It is 2x3 (a whole page of a 2x3
-   grid), or 2x2 without the moods, or 2x1 with the sources alone. The editor starts it at 1x1: drag its right edge, then
+3. In **Layout**, place the **Desk panel** tile from the library's Plugins group and make it 2x2 (everything) or 2x3
+   on a grid that offers it; 2x1 shows the sources alone. A 2x3 grid keeps its whole page for Tessera's own tiles,
+   so there 2x2 is the largest. The editor starts it at 1x1: drag its right edge, then
    its bottom edge.
 4. In the inspector, choose the select whose options are the sources (such as `input_select.buro_monitor_quelle`).
 5. Choose what you have, all optional:

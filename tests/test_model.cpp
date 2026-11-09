@@ -1,4 +1,5 @@
 // Host tests of model.h and logo.h: sh tests/run.sh
+#include <algorithm>
 #include <cassert>
 #include <cstdio>
 #include <cstring>
@@ -160,6 +161,24 @@ static void test_layout_one_row_only_sources() {
   assert(r.slots[3].r.x + r.slots[3].r.w == 480);
 }
 
+static void test_layout_two_rows_fits_everything() {
+  Have two{4, true, true, true, true, 2, false};
+  two.rows = 2;
+  const Layout r = layout_rest(480, 310, two, 8);
+  // REST: the four sources side by side on top, moods and the device under them.
+  const Slot *s0 = find(r, Key::SOURCE0), *s3 = find(r, Key(3));
+  const Slot *d = find(r, Key::DEVICE), *m0 = find(r, Key::MOOD0), *m1 = find(r, Key::MOOD1);
+  assert(s0 && s3 && d && m0 && m1);
+  assert(s0->r.y == 0 && s3->r.y == 0 && s3->r.x + s3->r.w == 480);
+  assert(d->r.y > s0->r.y + s0->r.h && m0->r.y == d->r.y && d->r.x + d->r.w == 480);
+  // WORK: the moods too.
+  const Layout w = layout_work(480, 310, two, 8);
+  assert(find(w, Key::MOOD0) && find(w, Key::MOOD1) && find(w, Key::DEVICE) && find(w, Key::AUTO));
+  int bottom = 0;
+  for (int i = 0; i < w.count; ++i) bottom = std::max(bottom, w.slots[i].r.y + w.slots[i].r.h);
+  assert(bottom == 310);
+}
+
 int main() {
   test_running_states();
   test_view_follows_power();
@@ -177,6 +196,7 @@ int main() {
   test_layout_empty_without_sources();
   test_source_lit_rest_pending();
   test_layout_one_row_only_sources();
+  test_layout_two_rows_fits_everything();
   puts("all model tests passed");
   return 0;
 }
