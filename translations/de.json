@@ -1,0 +1,39 @@
+{
+  "_meta": { "name": "Deutsch" },
+  "screen": {
+    "choose_select": "Auswahl wählen",
+    "picture": "Bild",
+    "monitor": "Monitor",
+    "auto": "Auto",
+    "starting": "Startet …",
+    "shutdown_q": "{name} herunterfahren?",
+    "cancel": "Abbrechen",
+    "shutdown": "Herunterfahren"
+  },
+  "app": {
+    "name": "Schreibtisch",
+    "summary": "Eine ganze Seite für den Schreibtisch: Monitor aus zeigt große Start-Tasten, Monitor an die Quellen mit Status, Monitor-Tasten, Auto und den PC-Schalter. Dazu zwei Stimmungen.",
+    "tile_name": "Schreibtisch",
+    "tile_example": "PC, Mac, PS5 und Switch, Monitor, PC, Stimmungen",
+    "card_name": "Herunterfahren?",
+    "script": "Skript",
+    "script_hint": "Optional. Ein Tipp auf eine Quelle startet dieses Skript mit der Option im Feld quelle, statt die Option direkt zu wählen.",
+    "status_1": "Status der 1. Quelle",
+    "status_2": "Status der 2. Quelle",
+    "status_3": "Status der 3. Quelle",
+    "status_hint": "Optional. Ein Gerät, das an ist, solange diese Quelle läuft; ihre Taste zeigt dann einen Punkt. In der Reihenfolge der Optionen der Auswahl.",
+    "auto_1": "Auto der 1. Quelle",
+    "auto_2": "Auto der 2. Quelle",
+    "auto_3": "Auto der 3. Quelle",
+    "auto_hint": "Optional. Ein Schalter oder Input-Boolean, der sagt, ob diese Quelle den Monitor von selbst einschaltet. Die Auto-Taste schaltet ihn für die gewählte Quelle.",
+    "picture": "Schalter fürs Bild",
+    "picture_hint": "Optional. An, solange der Monitor ein Bild zeigt; seine Taste schaltet nur das Bild.",
+    "power": "Schalter für den Monitor",
+    "power_hint": "Optional. An, solange der Monitor an ist. Er entscheidet auch die Ansicht: aus zeigt die großen Start-Tasten.",
+    "device": "Gerät",
+    "device_hint": "Optional. Ein Schalter für ein Gerät wie den PC: aus schaltet ein Tipp ihn ein, an fragt die Kachel vor dem Ausschalten nach.",
+    "mood_1": "1. Stimmung",
+    "mood_2": "2. Stimmung",
+    "mood_hint": "Optional. Eine Szene oder ein Skript; die Taste trägt ihren Namen."
+  }
+}
