@@ -45,6 +45,7 @@ static Key source(int k) { return Key(int(Key::SOURCE0) + k); }
 
 Layout layout_rest(int w, int h, const Have &have, int gap) {
   Layout l;
+  if (have.sources <= 0) return l;   // nothing shows, so nothing takes a tap
   const int n = have.sources < REST_SOURCES ? have.sources : REST_SOURCES;
   const int cw = (w - gap) / 2;
   Key bottom[3];
@@ -76,6 +77,7 @@ Layout layout_rest(int w, int h, const Have &have, int gap) {
 
 Layout layout_work(int w, int h, const Have &have, int gap) {
   Layout l;
+  if (have.sources <= 0) return l;   // nothing shows, so nothing takes a tap
   const int n = have.sources < MAX_SOURCES ? have.sources : MAX_SOURCES;
   const bool third = have.tall && have.moods > 0;
   int rh[3];
@@ -111,6 +113,16 @@ Key hit(const Layout &l, int x, int y) {
     if (x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h) return l.slots[i].key;
   }
   return Key::NONE;
+}
+
+bool needs_relayout(const Have &was, View was_view, const Have &now, View now_view) {
+  return was_view != now_view || was.sources != now.sources || was.autokey != now.autokey ||
+         was.picture != now.picture || was.power != now.power || was.device != now.device ||
+         was.moods != now.moods || was.tall != now.tall;
+}
+
+bool source_lit(View view, int i, int pending, int active) {
+  return view == View::REST ? i == pending : i == active;
 }
 
 void Starting::begin(uint32_t now_ms) {

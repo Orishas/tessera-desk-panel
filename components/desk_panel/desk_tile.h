@@ -25,6 +25,7 @@ class DeskTile : public tessera::Tile {
 
   void build();   // lays out the current view and shows the keys it has
   void paint();   // fills, colours and words, without laying out again
+  void refresh(); // build() when the layout must change (needs_relayout), else paint()
   int active() const;        // the chosen source: the one just tapped, else the select's option; -1 none
   int auto_index() const;    // the chosen source's Auto switch, -1 none
   Have have() const;
@@ -46,7 +47,9 @@ class DeskTile : public tessera::Tile {
   Source src_[MAX_SOURCES]{};
   int count_ = 0, pending_ = -1, mood_chosen_ = -1;
   uint32_t pending_at_ = 0;
-  bool has_state_ = false, built_ = false;
+  bool built_ = false;
+  Have laid_{};            // what the current layout was made for
+  View laid_view_ = View::REST;
   bool status_on_[3]{}, auto_on_[3]{};
   bool picture_on_ = false, power_on_ = false, device_on_ = false;
   View view_ = View::REST;

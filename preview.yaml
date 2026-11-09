@@ -37,6 +37,12 @@ tiles:
     options: *work
     sizes: [2x3]
   - tile: desk
+    name: Picture off
+    entity: input_select.monitor_source
+    options: { script: script.show_source, picture: switch.monitor_picture_off, power: switch.monitor_on,
+               device: switch.pc, mood_1: scene.focus, mood_2: scene.off }
+    sizes: [2x3]
+  - tile: desk
     name: Starting
     entity: input_select.monitor_source
     options: { script: script.show_source, status_1: binary_sensor.pc_off, power: switch.monitor_off,
@@ -75,6 +81,7 @@ states:
   input_boolean.mac_auto: { state: "on", attributes: { friendly_name: Mac auto } }
   input_boolean.ps5_auto: { state: "off", attributes: { friendly_name: PS5 auto } }
   switch.monitor_picture: { state: "on", attributes: { friendly_name: Picture } }
+  switch.monitor_picture_off: { state: "off", attributes: { friendly_name: Picture } }
   switch.monitor_on: { state: "on", attributes: { friendly_name: Monitor } }
   switch.monitor_off: { state: "off", attributes: { friendly_name: Monitor } }
   switch.pc: { state: "on", attributes: { friendly_name: PC } }

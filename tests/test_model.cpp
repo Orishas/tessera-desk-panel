@@ -123,6 +123,31 @@ static void test_layout_without_bottom_fills() {
   assert(bottom == 480);
 }
 
+static void test_relayout_on_auto_change() {
+  const Have mac{4, true, true, true, true, 2, true}, sw{4, true, true, false, true, 2, true};
+  assert(needs_relayout(mac, View::WORK, sw, View::WORK));
+  assert(needs_relayout(sw, View::WORK, mac, View::WORK));
+  assert(!needs_relayout(mac, View::WORK, mac, View::WORK));
+  assert(needs_relayout(mac, View::WORK, mac, View::REST));
+  Have six = mac;
+  six.sources = 6;
+  assert(needs_relayout(mac, View::WORK, six, View::WORK));
+}
+
+static void test_layout_empty_without_sources() {
+  const Have none{0, true, true, true, true, 2, true};
+  assert(layout_rest(480, 480, none, 8).count == 0);
+  assert(layout_work(480, 480, none, 8).count == 0);
+  assert(hit(layout_work(480, 480, none, 8), 240, 400) == Key::NONE);
+}
+
+static void test_source_lit_rest_pending() {
+  assert(source_lit(View::REST, 2, 2, 1));     // REST: the tapped key answers at once
+  assert(!source_lit(View::REST, 1, -1, 1));   // REST: the chosen one is not marked
+  assert(source_lit(View::WORK, 1, -1, 1));    // WORK: the chosen one
+  assert(!source_lit(View::WORK, 0, -1, -1));  // WORK: unknown choice marks none
+}
+
 int main() {
   test_running_states();
   test_view_follows_power();
@@ -136,6 +161,9 @@ int main() {
   test_starting_blocks_retap();
   test_guess_logo();
   test_layout_without_bottom_fills();
+  test_relayout_on_auto_change();
+  test_layout_empty_without_sources();
+  test_source_lit_rest_pending();
   puts("all model tests passed");
   return 0;
 }

@@ -67,8 +67,10 @@ void DeskTile::create(const tessera::TileContext &c) {
     sdot_[i] = ui::block(sblock_[i], theme::ACCENT);
     lv_obj_set_style_radius(sdot_[i], LV_RADIUS_CIRCLE, 0);
     lv_obj_set_size(sdot_[i], ui::mm(2), ui::mm(2));
-    sauto_[i] = ui::label(sblock_[i], Font::BODY, theme::MUTED);
-    ui::set_text(sauto_[i], "A");
+    if (i < 3) {   // only the first three sources have an Auto option
+      sauto_[i] = ui::label(sblock_[i], Font::BODY, theme::MUTED);
+      ui::set_text(sauto_[i], "A");
+    }
     show(sblock_[i], false);
   }
   for (int k = 0; k < C_COUNT; ++k) {
@@ -86,7 +88,6 @@ void DeskTile::create(const tessera::TileContext &c) {
 }
 
 void DeskTile::on_state(JsonObjectConst data) {
-  has_state_ = !data["state"].isNull();
   chosen_ = roomy::text(std::string(data["state"] | ""));
   int count = 0;
   for (JsonVariantConst v : data["attributes"]["options"].as<JsonArrayConst>()) {
@@ -118,20 +119,20 @@ void DeskTile::on_state(JsonObjectConst data) {
 
   bool has_status[3];
   for (int i = 0; i < 3; ++i) has_status[i] = !status_[i].empty();
-  const View view = choose_view(!power_.empty(), power_on_, status_on_, has_status);
-  // A new view, another number of sources, or Auto that comes or goes: lay out again. Otherwise only paint.
-  const bool autokey = auto_index() >= 0;
-  const bool relayout = !built_ || view != view_ || count != count_ || autokey != have().autokey;
   count_ = count;
-  view_ = view;
-  if (relayout) build();
+  view_ = choose_view(!power_.empty(), power_on_, status_on_, has_status);
+  refresh();
+}
+
+void DeskTile::refresh() {
+  if (!built_ || needs_relayout(laid_, laid_view_, have(), view_)) build();
   else paint();
 }
 
 void DeskTile::on_tick(uint32_t epoch) {
   if (pending_ >= 0 && esphome::millis() - pending_at_ > PENDING_MS) {
     pending_ = -1;
-    paint();
+    refresh();   // the chosen source is the select's again: its Auto key may come or go
   }
   if (!pulsing_) return;
   if (!starting_.active(esphome::millis(), device_on_)) {
@@ -211,6 +212,8 @@ DeskTile::Ctl DeskTile::ctl_of(Key k) {
 void DeskTile::build() {
   built_ = true;
   const Have h = have();
+  laid_ = h;
+  laid_view_ = view_;
   const int gap = ui::px(8);
   // Only the moods the person chose, in their order: the second alone takes MOOD0's place.
   layout_ = view_ == View::REST ? layout_rest(width_, height_, h, gap) : layout_work(width_, height_, h, gap);
@@ -273,7 +276,7 @@ void DeskTile::place_source(int i, const Rect &r) {
   ui::set_text(sword_[i], src_[i].value);
   const int inset = ui::px(8), dot = ui::mm(2);
   lv_obj_set_pos(sdot_[i], r.w - inset - dot, inset);
-  lv_obj_set_pos(sauto_[i], inset, inset);   // top left; the dot is top right
+  if (sauto_[i]) lv_obj_set_pos(sauto_[i], inset, inset);   // top left; the dot is top right
 }
 
 void DeskTile::place_ctl(Ctl k, const Rect &r) {
@@ -298,14 +301,14 @@ void DeskTile::paint() {
   const bool rest = view_ == View::REST;
   for (int i = 0; i < MAX_SOURCES; ++i) {
     if (!shown_src_[i]) continue;
-    const bool chosen = !rest && i == on;
+    const bool chosen = source_lit(view_, i, pending_, on);
     ui::set_fill(sblock_[i], tessera::Tone::NORMAL, chosen ? theme::ACCENT : theme::TRACK);
     ui::set_color(sword_[i], chosen ? theme::ON_ACCENT : theme::INK_SOFT);
     lv_obj_set_style_image_recolor(slogo_[i], ui::color(chosen ? theme::ON_ACCENT : theme::INK), 0);
     const bool running = i < 3 && !status_[i].empty() && status_on_[i];
     ui::set_fill(sdot_[i], tessera::Tone::NORMAL, chosen ? theme::ON_ACCENT : theme::ACCENT);
     show(sdot_[i], running);
-    ui::set_color(sauto_[i], theme::MUTED);
+    if (sauto_[i]) ui::set_color(sauto_[i], theme::MUTED);
     show(sauto_[i], rest && i < 3 && !auto_[i].empty() && auto_on_[i]);
   }
   const int a = auto_index();
@@ -328,9 +331,11 @@ void DeskTile::paint() {
     const bool accent = looks[lk].accent;
     ui::set_fill(cblock_[k], tessera::Tone::NORMAL, accent ? theme::ACCENT : theme::TRACK);
     if (looks[lk].icon) ui::set_text(cicon_[k], ui::icon(looks[lk].icon));
-    ui::set_color(cicon_[k], accent ? theme::ON_ACCENT : theme::INK);
+    // The picture's key says "off" by fading: grey like the others, its icon and word muted.
+    const bool faded = k == C_PICTURE && !picture_on_;
+    ui::set_color(cicon_[k], accent ? theme::ON_ACCENT : faded ? theme::SUBTLE : theme::INK);
     ui::set_text(cword_[k], looks[lk].word);
-    ui::set_color(cword_[k], accent ? theme::ON_ACCENT : theme::INK_SOFT);
+    ui::set_color(cword_[k], accent ? theme::ON_ACCENT : faded ? theme::SUBTLE : theme::INK_SOFT);
   }
   // Nothing to show: say what is missing.
   const bool empty = entity_.empty() || count_ == 0;
@@ -357,7 +362,7 @@ void DeskTile::tap_source(int i) {
   if (sent) {
     pending_ = i;
     pending_at_ = esphome::millis();
-    paint();
+    refresh();   // another source may bring or take away the Auto key
   }
 }
 

@@ -27,8 +27,9 @@ tiles:
     name: tile_name
     icon: desk
     sizes: { min: 2x2, max: 2x3 }
-    # Up to 13 keys (a block, a logo or icon and a word each), six dots and three "A" marks, plus members.
-    memory: 4200
+    # Six source keys (block, logo, word, dot), three "A" marks, six other keys (block, icon, word), a note, about 4.2 KB;
+    # members (sources, layout, texts, image descriptors) about 2.5 KB.
+    memory: 7000
     domains: [input_select, select]
     attributes: [options]
     example: tile_example

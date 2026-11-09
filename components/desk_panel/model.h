@@ -26,6 +26,10 @@ struct Have { int sources; bool picture, power, autokey, device; int moods; bool
 Layout layout_rest(int w, int h, const Have &have, int gap);
 Layout layout_work(int w, int h, const Have &have, int gap);
 Key hit(const Layout &l, int x, int y);
+// The layout must be made again: another view, another number of sources, or Auto that comes or goes.
+bool needs_relayout(const Have &was, View was_view, const Have &now, View now_view);
+// Whether source i is marked: in REST only the key just tapped (an answer to the finger), in WORK the chosen one.
+bool source_lit(View view, int i, int pending, int active);
 
 // The device key's "Starting ...": from a tap that turned the device on until it reports on, at most STARTING_MS.
 struct Starting {
