@@ -1,6 +1,6 @@
 #include "desk_tile.h"
 #include "logo.h"
-#include "logos.h"
+#include "parts.h"
 #include "esphome/core/hal.h"
 #include <algorithm>
 #include <cstdio>
@@ -20,39 +20,29 @@ static constexpr uint32_t ICON_POWER = 0xF0425;
 static constexpr uint32_t ICON_AUTO = 0xF18F2;
 static constexpr uint32_t ICON_MONITOR = 0xF0379;
 
-static void show(lv_obj_t *o, bool on) {
-  if (!o) return;
-  if (on) lv_obj_remove_flag(o, LV_OBJ_FLAG_HIDDEN);
-  else lv_obj_add_flag(o, LV_OBJ_FLAG_HIDDEN);
-}
+// "status_1" ... "auto_3": the id of an option, and of its entity in on_state's data.
+struct OptionId {
+  char text[12];
+  OptionId(const char *stem, int i) { snprintf(text, sizeof(text), "%s_%d", stem, i + 1); }
+};
 
-static lv_obj_t *key_block(lv_obj_t *parent) {
-  lv_obj_t *b = ui::block(parent, theme::TRACK);
-  lv_obj_set_style_pad_all(b, 0, 0);
-  lv_obj_remove_flag(b, LV_OBJ_FLAG_SCROLLABLE);
-  return b;
+static tessera::Text option(const tessera::TileContext &c, const char *id) {
+  return roomy::text(std::string(c.options[id] | ""));
 }
-
-static std::string option(const tessera::TileContext &c, const char *id) { return c.options[id] | ""; }
 
 void DeskTile::create(const tessera::TileContext &c) {
-  parent_ = c.parent;
   width_ = c.width;
   height_ = c.height;
   tile_ = c.tile;
-  tall_ = c.rows >= 3;
   rows_ = c.rows;
   entity_ = roomy::text(std::string(c.entity ? c.entity : ""));
-  script_ = roomy::text(option(c, "script"));
-  picture_ = roomy::text(option(c, "picture"));
-  power_ = roomy::text(option(c, "power"));
-  device_ = roomy::text(option(c, "device"));
-  char id[12];
-  for (int i = 0; i < 3; ++i) {
-    snprintf(id, sizeof(id), "status_%d", i + 1);
-    status_[i] = roomy::text(option(c, id));
-    snprintf(id, sizeof(id), "auto_%d", i + 1);
-    auto_[i] = roomy::text(option(c, id));
+  script_ = option(c, "script");
+  picture_ = option(c, "picture");
+  power_ = option(c, "power");
+  device_ = option(c, "device");
+  for (int i = 0; i < WITH_OPTIONS; ++i) {
+    status_[i] = option(c, OptionId("status", i).text);
+    auto_[i] = option(c, OptionId("auto", i).text);
   }
 
   for (int i = 0; i < MAX_SOURCES; ++i) {
@@ -69,7 +59,7 @@ void DeskTile::create(const tessera::TileContext &c) {
     sdot_[i] = ui::block(sblock_[i], theme::ACCENT);
     lv_obj_set_style_radius(sdot_[i], LV_RADIUS_CIRCLE, 0);
     lv_obj_set_size(sdot_[i], ui::mm(2), ui::mm(2));
-    if (i < 3) {   // only the first three sources have an Auto option
+    if (i < WITH_OPTIONS) {   // only these sources have an Auto option
       sauto_[i] = ui::label(sblock_[i], Font::ICON_SMALL, theme::INK_SOFT);
       ui::set_text(sauto_[i], ui::icon(ICON_AUTO));
     }
@@ -105,16 +95,14 @@ void DeskTile::on_state(JsonObjectConst data) {
     snprintf(src.logo, sizeof(src.logo), "%s", guess_logo(s).c_str());
   }
   JsonObjectConst e = data["entities"];
-  char id[12];
-  for (int i = 0; i < 3; ++i) {
-    snprintf(id, sizeof(id), "status_%d", i + 1);
-    status_on_[i] = is_running(e[id]["state"] | "");
-    snprintf(id, sizeof(id), "auto_%d", i + 1);
-    auto_on_[i] = std::string(e[id]["state"] | "") == "on";
+  const auto is_on = [&e](const char *id) { return strcmp(e[id]["state"] | "", "on") == 0; };
+  for (int i = 0; i < WITH_OPTIONS; ++i) {
+    status_on_[i] = is_running(e[OptionId("status", i).text]["state"] | "");
+    auto_on_[i] = is_on(OptionId("auto", i).text);
   }
-  picture_on_ = std::string(e["picture"]["state"] | "") == "on";
-  power_on_ = std::string(e["power"]["state"] | "") == "on";
-  device_on_ = std::string(e["device"]["state"] | "") == "on";
+  picture_on_ = is_on("picture");
+  power_on_ = is_on("power");
+  device_on_ = is_on("device");
   device_name_ = roomy::text(std::string(e["device"]["name"] | ""));
   // Home Assistant has the tapped option now, or the option is gone: the key follows the select again.
   if (pending_ >= count || (pending_ >= 0 && roomy::same(chosen_, std::string(src_[pending_].value)))) pending_ = -1;
@@ -125,8 +113,8 @@ void DeskTile::on_state(JsonObjectConst data) {
     starting_src_ = -1;
   toggled_ = nullptr;   // Home Assistant has spoken: the keys show its states
 
-  bool has_status[3];
-  for (int i = 0; i < 3; ++i) has_status[i] = !status_[i].empty();
+  bool has_status[WITH_OPTIONS];
+  for (int i = 0; i < WITH_OPTIONS; ++i) has_status[i] = !status_[i].empty();
   count_ = count;
   view_ = choose_view(!power_.empty(), power_on_, status_on_, has_status);
   refresh();
@@ -192,11 +180,11 @@ int DeskTile::active() const {
 
 int DeskTile::auto_index() const {
   const int i = active();
-  return i >= 0 && i < 3 && !auto_[i].empty() ? i : -1;
+  return i >= 0 && i < WITH_OPTIONS && !auto_[i].empty() ? i : -1;
 }
 
 Have DeskTile::have() const {
-  return Have{count_, !picture_.empty(), !power_.empty(), auto_index() >= 0, !device_.empty(), tall_, rows_};
+  return Have{count_, !picture_.empty(), !power_.empty(), auto_index() >= 0, !device_.empty(), rows_};
 }
 
 DeskTile::Ctl DeskTile::ctl_of(Key k) {
@@ -318,13 +306,13 @@ void DeskTile::paint() {
     ui::set_fill(sblock_[i], tessera::Tone::NORMAL, chosen ? theme::ACCENT : theme::TRACK);
     // REST: a frame around the source the monitor shows when it comes on.
     const bool framed = source_framed(view_, i, pending_, on);
-    lv_obj_set_style_border_color(sblock_[i], ui::color(chosen || framed ? theme::ACCENT : theme::TRACK), 0);
+    set_style_color(sblock_[i], LV_STYLE_BORDER_COLOR, ui::color(chosen || framed ? theme::ACCENT : theme::TRACK));
     ui::set_color(sword_[i], chosen ? theme::ON_ACCENT : theme::INK_SOFT);
-    lv_obj_set_style_image_recolor(slogo_[i], ui::color(chosen ? theme::ON_ACCENT : theme::INK), 0);
+    set_style_color(slogo_[i], LV_STYLE_IMAGE_RECOLOR, ui::color(chosen ? theme::ON_ACCENT : theme::INK));
     ui::set_fill(sdot_[i], tessera::Tone::NORMAL, chosen ? theme::ON_ACCENT : theme::ACCENT);
     // The Auto mark, in both views: this source turns the monitor on by itself.
     if (sauto_[i]) ui::set_color(sauto_[i], chosen ? theme::ON_ACCENT : theme::INK_SOFT);
-    show(sauto_[i], i < 3 && mark_fits_[i] && !auto_[i].empty() && auto_on_[i]);
+    show(sauto_[i], i < WITH_OPTIONS && mark_fits_[i] && !auto_[i].empty() && auto_on_[i]);
   }
   const int a = auto_index();
   const bool auto_on = a >= 0 && auto_on_[a];
@@ -359,7 +347,7 @@ void DeskTile::paint() {
 void DeskTile::paint_dots() {
   for (int i = 0; i < MAX_SOURCES; ++i) {
     if (!shown_src_[i]) continue;
-    const bool running = i < 3 && !status_[i].empty() && status_on_[i];
+    const bool running = i < WITH_OPTIONS && !status_[i].empty() && status_on_[i];
     show(sdot_[i], running || (i == starting_src_ && src_starting_.lit(esphome::millis())));
   }
   show(cdot_, shown_ctl_[C_DEVICE] && (pulsing_ ? pulse_lit_ : device_on_));
@@ -385,7 +373,7 @@ void DeskTile::tap_source(int i) {
     pending_at_ = esphome::millis();
     // Its device is off: the dot blinks until it is there. Without a status option nothing says so, so nothing blinks.
     starting_src_ = -1;
-    if (i < 3 && !status_[i].empty() && !status_on_[i]) {
+    if (i < WITH_OPTIONS && !status_[i].empty() && !status_on_[i]) {
       src_starting_.begin(pending_at_);
       starting_src_ = i;
     }
@@ -398,10 +386,7 @@ void DeskTile::tap_source(int i) {
 void DeskTile::tap_switch(const tessera::Text &entity, bool &on) {
   const std::string e = roomy::plain(entity);
   if (e.empty()) return;
-  const bool boolean = e.rfind("input_boolean.", 0) == 0;
-  const char *service = on ? (boolean ? "input_boolean.turn_off" : "switch.turn_off")
-                           : (boolean ? "input_boolean.turn_on" : "switch.turn_on");
-  if (tessera::action(service, e)) {
+  if (tessera::action(switch_service(e.c_str(), !on), e)) {
     on = !on;
     toggled_ = &on;
     toggled_at_ = esphome::millis();
@@ -419,8 +404,7 @@ void DeskTile::tap_device() {
     tessera::open_card(plugin_->plugin_id(), "confirm", e, tile_, name);
     return;
   }
-  const bool boolean = e.rfind("input_boolean.", 0) == 0;
-  if (tessera::action(boolean ? "input_boolean.turn_on" : "switch.turn_on", e)) {
+  if (tessera::action(switch_service(e.c_str(), true), e)) {
     starting_.begin(esphome::millis());
     pulsing_ = true;
     pulse_lit_ = true;

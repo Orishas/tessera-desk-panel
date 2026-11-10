@@ -40,5 +40,8 @@ Logos, guessed from the option's name: `windows` (PC), `apple` (Mac), `playstati
 
 - The screen must be allowed to perform Home Assistant actions (Tessera turns it on when it adds the screen).
 - Up to six sources, with the monitor on or off.
+- On a screen turned in its settings (Rotation 90°, 180° or 270°) that turns its picture in software, such as the
+  Guition 4", a tap on this tile is lost with firmware 0.60.0: the pressed card takes two slow frames, and the firmware
+  counts the tap as a hold, which a plugin's tile does not get. It works with Rotation at 0°.
 - The logos are Material Design Icons (Apache 2.0), the ones Home Assistant uses too; the brands belong to their owners.
   `tools/make_logos.py` makes `components/desk_panel/logos.h` from `tools/svg/`.

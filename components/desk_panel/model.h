@@ -13,6 +13,8 @@ struct Slot { Key key; Rect r; };
 struct Layout { Slot slots[16]; int count = 0; };
 
 static constexpr int MAX_SOURCES = 6;
+// The sources that can have a status and an Auto switch: the first three, by the manifest's options.
+static constexpr int WITH_OPTIONS = 3;
 static constexpr uint32_t STARTING_MS = 120000;
 // How long a key shows a switch the other way before Home Assistant has said so; then it shows the old state again.
 static constexpr uint32_t CONFIRM_MS = 5000;
@@ -20,11 +22,21 @@ static constexpr uint32_t CONFIRM_MS = 5000;
 // A state that says the device runs: on, home, playing, paused or idle. standby, unavailable and the rest do not.
 bool is_running(const char *state);
 // REST while the monitor's power is off; without a power switch, while no source with a status option runs.
-View choose_view(bool has_power, bool power_on, const bool running[3], const bool has_status[3]);
+View choose_view(bool has_power, bool power_on, const bool running[WITH_OPTIONS],
+                 const bool has_status[WITH_OPTIONS]);
 
-// What the person has, for laying out. autokey: the chosen source has an Auto switch. tall: the tile is three rows.
-// rows: the tile's grid rows; a tile one row high shows its sources alone.
-struct Have { int sources; bool picture, power, autokey, device; bool tall; int rows = 2; };
+// What the person has, for laying out. autokey: the chosen source has an Auto switch. rows: the tile's grid rows; a
+// tile one row high shows its sources alone, one of three or more has a row of its own for the device (tall()).
+struct Have {
+  int sources;
+  bool picture, power, autokey, device;
+  int rows = 2;
+  bool tall() const { return rows >= 3; }
+  bool operator==(const Have &o) const {
+    return sources == o.sources && picture == o.picture && power == o.power && autokey == o.autokey &&
+           device == o.device && rows == o.rows;
+  }
+};
 Layout layout_rest(int w, int h, const Have &have, int gap);
 Layout layout_work(int w, int h, const Have &have, int gap);
 Key hit(const Layout &l, int x, int y);
@@ -35,6 +47,8 @@ bool source_lit(View view, int i, int pending, int active);
 // Whether source i has a frame: in REST the chosen one (what the monitor shows when it comes on), unless a key was
 // just tapped.
 bool source_framed(View view, int i, int pending, int active);
+// The action that turns a switch or an input boolean on or off, by the entity's domain.
+const char *switch_service(const char *entity, bool on);
 // A switch turned at at_ms has no answer yet and waited long enough.
 bool unconfirmed(uint32_t now_ms, uint32_t at_ms);
 

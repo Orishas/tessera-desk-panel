@@ -39,12 +39,10 @@ class DeskTile : public tessera::Tile {
   void tap_device();
 
   const tessera::Plugin *plugin_;
-  lv_obj_t *parent_{};
   int width_ = 0, height_ = 0, tile_ = -1;
-  bool tall_ = true;
   int rows_ = 3;
   tessera::Text entity_, script_, picture_, power_, device_, chosen_;
-  tessera::Text status_[3], auto_[3];
+  tessera::Text status_[WITH_OPTIONS], auto_[WITH_OPTIONS];
   tessera::Text device_name_;
 
   Source src_[MAX_SOURCES]{};
@@ -53,7 +51,7 @@ class DeskTile : public tessera::Tile {
   bool built_ = false;
   Have laid_{};            // what the current layout was made for
   View laid_view_ = View::REST;
-  bool status_on_[3]{}, auto_on_[3]{};
+  bool status_on_[WITH_OPTIONS]{}, auto_on_[WITH_OPTIONS]{};
   bool picture_on_ = false, power_on_ = false, device_on_ = false;
   View view_ = View::REST;
   Layout layout_;

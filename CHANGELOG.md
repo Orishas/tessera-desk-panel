@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.1 - 2026-11-10
+- The tile draws a key again only when its look changes: an update from Home Assistant that changes nothing on the
+  tile no longer redraws the source keys.
+- Nothing else changes for you: the code was reviewed and tidied.
+
 ## 0.3.0 - 2026-11-09
 - The accent is the chosen source's alone. The other keys stay grey: the device says on with a dot, as a source
   does, and a switch that is off has a muted icon and says "Picture off" or "Auto off".

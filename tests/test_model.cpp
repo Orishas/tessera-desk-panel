@@ -20,7 +20,7 @@ static int count_sources(const Layout &l) {
     if (int(l.slots[i].key) >= int(Key::SOURCE0) && int(l.slots[i].key) < int(Key::SOURCE0) + 6) ++n;
   return n;
 }
-static Have full(int sources, bool tall = true) { return Have{sources, true, true, true, true, tall}; }
+static Have full(int sources, bool tall = true) { return Have{sources, true, true, true, true, tall ? 3 : 2}; }
 
 static void test_running_states() {
   for (const char *s : {"on", "home", "playing", "paused", "idle"}) assert(is_running(s));
@@ -135,13 +135,21 @@ static void test_guess_logo() {
   assert(guess_logo("Radio").empty());
 }
 
+static void test_switch_service() {
+  assert(strcmp(switch_service("switch.pc", true), "switch.turn_on") == 0);
+  assert(strcmp(switch_service("switch.pc", false), "switch.turn_off") == 0);
+  assert(strcmp(switch_service("input_boolean.auto", true), "input_boolean.turn_on") == 0);
+  assert(strcmp(switch_service("input_boolean.auto", false), "input_boolean.turn_off") == 0);
+  assert(strcmp(switch_service("", false), "switch.turn_off") == 0);
+}
+
 static void test_layout_without_bottom_fills() {
-  const Have bare{4, false, false, false, false, true};
+  const Have bare{4, false, false, false, false, 3};
   const Layout r = layout_rest(480, 480, bare, 8);
   int bottom = 0;
   for (int i = 0; i < r.count; ++i) bottom = r.slots[i].r.y + r.slots[i].r.h > bottom ? r.slots[i].r.y + r.slots[i].r.h : bottom;
   assert(bottom == 480);
-  const Layout w = layout_work(480, 480, Have{4, true, true, false, false, true}, 8);
+  const Layout w = layout_work(480, 480, Have{4, true, true, false, false, 3}, 8);
   bottom = 0;
   for (int i = 0; i < w.count; ++i) bottom = w.slots[i].r.y + w.slots[i].r.h > bottom ? w.slots[i].r.y + w.slots[i].r.h : bottom;
   assert(bottom == 480);
@@ -152,7 +160,7 @@ static void test_layout_without_bottom_fills() {
 }
 
 static void test_relayout_on_auto_change() {
-  const Have mac{4, true, true, true, true, true}, sw{4, true, true, false, true, true};
+  const Have mac{4, true, true, true, true, 3}, sw{4, true, true, false, true, 3};
   assert(needs_relayout(mac, View::WORK, sw, View::WORK));
   assert(needs_relayout(sw, View::WORK, mac, View::WORK));
   assert(!needs_relayout(mac, View::WORK, mac, View::WORK));
@@ -163,7 +171,7 @@ static void test_relayout_on_auto_change() {
 }
 
 static void test_layout_empty_without_sources() {
-  const Have none{0, true, true, true, true, true};
+  const Have none{0, true, true, true, true, 3};
   assert(layout_rest(480, 480, none, 8).count == 0);
   assert(layout_work(480, 480, none, 8).count == 0);
   assert(hit(layout_work(480, 480, none, 8), 240, 400) == Key::NONE);
@@ -177,7 +185,7 @@ static void test_source_lit_rest_pending() {
 }
 
 static void test_layout_one_row_only_sources() {
-  Have one{4, true, true, true, true, false};
+  Have one{4, true, true, true, true, 2};
   one.rows = 1;
   const Layout r = layout_rest(480, 160, one, 8), w = layout_work(480, 160, one, 8);
   assert(r.count == 4 && w.count == 4);
@@ -189,7 +197,7 @@ static void test_layout_one_row_only_sources() {
 }
 
 static void test_layout_two_rows_fits_everything() {
-  Have two{4, true, true, true, true, false};
+  Have two{4, true, true, true, true, 2};
   two.rows = 2;
   const Layout r = layout_rest(480, 310, two, 8);
   // REST: the four sources side by side on top, the device under them over the whole width.
@@ -225,6 +233,7 @@ int main() {
   test_starting_times_out();
   test_starting_blocks_retap();
   test_guess_logo();
+  test_switch_service();
   test_layout_without_bottom_fills();
   test_relayout_on_auto_change();
   test_layout_empty_without_sources();

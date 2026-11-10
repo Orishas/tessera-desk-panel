@@ -11,9 +11,10 @@ bool is_running(const char *state) {
   return false;
 }
 
-View choose_view(bool has_power, bool power_on, const bool running[3], const bool has_status[3]) {
+View choose_view(bool has_power, bool power_on, const bool running[WITH_OPTIONS],
+                 const bool has_status[WITH_OPTIONS]) {
   if (has_power) return power_on ? View::WORK : View::REST;
-  for (int i = 0; i < 3; ++i)
+  for (int i = 0; i < WITH_OPTIONS; ++i)
     if (has_status[i] && running[i]) return View::WORK;
   return View::REST;
 }
@@ -62,7 +63,7 @@ Layout layout_rest(int w, int h, const Have &have, int gap) {
   for (int k = 0; k < n; ++k) keys[k] = source(k);
   // Two rows high (2x2, the largest a plugin's tile gets on a 2x3 grid) with a device: the sources side by side on
   // top, the device's key under them over the whole width.
-  if (!have.tall && have.device) {
+  if (!have.tall() && have.device) {
     const int parts[2] = {2, 1};
     int two[2];
     heights(h, gap, parts, 2, two);
@@ -72,7 +73,7 @@ Layout layout_rest(int w, int h, const Have &have, int gap) {
   }
   // Two rows of sources: two in a row up to four, three with five or six; the second row's keys share the width.
   // A tall tile has a third row for the device; without a device the sources take the height.
-  const bool third = have.tall && have.device;
+  const bool third = have.tall() && have.device;
   const int cols = n <= 4 ? 2 : 3, first = n < cols ? n : cols;
   int rh[3];
   if (third) {
@@ -119,9 +120,7 @@ Key hit(const Layout &l, int x, int y) {
 }
 
 bool needs_relayout(const Have &was, View was_view, const Have &now, View now_view) {
-  return was_view != now_view || was.sources != now.sources || was.autokey != now.autokey ||
-         was.picture != now.picture || was.power != now.power || was.device != now.device ||
-         was.tall != now.tall || was.rows != now.rows;
+  return was_view != now_view || !(was == now);
 }
 
 bool source_lit(View view, int i, int pending, int active) {
@@ -130,6 +129,12 @@ bool source_lit(View view, int i, int pending, int active) {
 
 bool source_framed(View view, int i, int pending, int active) {
   return view == View::REST && pending < 0 && i >= 0 && i == active;
+}
+
+const char *switch_service(const char *entity, bool on) {
+  const bool boolean = entity != nullptr && strncmp(entity, "input_boolean.", 14) == 0;
+  if (boolean) return on ? "input_boolean.turn_on" : "input_boolean.turn_off";
+  return on ? "switch.turn_on" : "switch.turn_off";
 }
 
 bool unconfirmed(uint32_t now_ms, uint32_t at_ms) { return now_ms - at_ms >= CONFIRM_MS; }

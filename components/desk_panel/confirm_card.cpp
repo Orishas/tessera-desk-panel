@@ -1,4 +1,6 @@
 #include "confirm_card.h"
+#include "model.h"
+#include "parts.h"
 #include <algorithm>
 #include <string>
 
@@ -8,9 +10,7 @@ using tessera::Font;
 namespace ui = tessera::ui;
 
 static lv_obj_t *button(lv_obj_t *parent, lv_obj_t **word) {
-  lv_obj_t *b = ui::block(parent, theme::TRACK);
-  lv_obj_set_style_pad_all(b, 0, 0);
-  lv_obj_remove_flag(b, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_t *b = key_block(parent);
   *word = ui::label(b, Font::BODY_LARGE, theme::INK);
   lv_obj_set_style_text_align(*word, LV_TEXT_ALIGN_CENTER, 0);
   return b;
@@ -77,8 +77,7 @@ void ConfirmCard::on_tap() {
   if (p.x < key_w_ + gap_) return;   // between the two
   const std::string e = roomy::plain(entity_);
   if (e.empty()) return;
-  const bool boolean = e.rfind("input_boolean.", 0) == 0;
-  tessera::action(boolean ? "input_boolean.turn_off" : "switch.turn_off", e);
+  tessera::action(switch_service(e.c_str(), false), e);
   tessera::close_card();
 }
 
