@@ -30,6 +30,9 @@ source and a key for a device such as a PC.
    | **Picture switch**, **Monitor switch** | The monitor's keys. The monitor switch also chooses the view. |
    | **Device** | A switch for a device such as a PC. Its key carries the switch's name. |
 
+What the script, the switches and the Auto toggles look like in Home Assistant, with a whole example for an LG OLED
+as the monitor: [docs/HOME_ASSISTANT.md](docs/HOME_ASSISTANT.md).
+
 The order of the sources is the order of the select's options. The 1st state and the 1st Auto belong to its first
 option.
 
