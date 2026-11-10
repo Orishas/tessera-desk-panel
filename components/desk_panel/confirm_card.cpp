@@ -77,8 +77,8 @@ void ConfirmCard::on_tap() {
   if (p.x < key_w_ + gap_) return;   // between the two
   const std::string e = roomy::plain(entity_);
   if (e.empty()) return;
-  tessera::action(switch_service(e.c_str(), false), e);
-  tessera::close_card();
+  // Not sent (Home Assistant is away): the card stays, so the person sees that nothing happened and can tap again.
+  if (tessera::action(switch_service(e.c_str(), false), e)) tessera::close_card();
 }
 
 }  // namespace esphome::desk_panel

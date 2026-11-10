@@ -5,16 +5,16 @@ tiles:
     entity: input_select.monitor_source
     options: &all { script: script.show_source, status_1: binary_sensor.pc, status_2: binary_sensor.mac,
                     status_3: media_player.ps5, auto_1: input_boolean.pc_auto, auto_2: input_boolean.mac_auto,
-                    auto_3: input_boolean.ps5_auto, picture: switch.monitor_picture, power: switch.monitor_off,
-                    device: switch.pc }
+                    auto_3: input_boolean.ps5_auto, status_4: media_player.switch2, auto_4: input_boolean.switch2_auto,
+                    picture: switch.monitor_picture, power: switch.monitor_off, device: switch.pc }
     sizes: [2x3, 2x2, 2x1]
   - tile: desk
     name: Arbeit
     entity: input_select.monitor_source
     options: &work { script: script.show_source, status_1: binary_sensor.pc, status_2: binary_sensor.mac,
                      status_3: media_player.ps5, auto_1: input_boolean.pc_auto, auto_2: input_boolean.mac_auto,
-                     auto_3: input_boolean.ps5_auto, picture: switch.monitor_picture, power: switch.monitor_on,
-                     device: switch.pc }
+                     auto_3: input_boolean.ps5_auto, status_4: media_player.switch2, auto_4: input_boolean.switch2_auto,
+                     picture: switch.monitor_picture, power: switch.monitor_on, device: switch.pc }
     sizes: [2x3, 2x2]
   - tile: desk
     name: Arbeit Switch
@@ -80,6 +80,8 @@ states:
   input_boolean.pc_auto: { state: "on", attributes: { friendly_name: PC auto } }
   input_boolean.mac_auto: { state: "on", attributes: { friendly_name: Mac auto } }
   input_boolean.ps5_auto: { state: "off", attributes: { friendly_name: PS5 auto } }
+  media_player.switch2: { state: "on", attributes: { friendly_name: Switch 2 } }
+  input_boolean.switch2_auto: { state: "on", attributes: { friendly_name: Switch 2 auto } }
   switch.monitor_picture: { state: "on", attributes: { friendly_name: Picture } }
   switch.monitor_picture_off: { state: "off", attributes: { friendly_name: Picture } }
   switch.monitor_on: { state: "on", attributes: { friendly_name: Monitor } }

@@ -29,14 +29,19 @@ static void test_running_states() {
 }
 
 static void test_view_follows_power() {
-  const bool all[3] = {true, true, true}, none[3] = {false, false, false}, has[3] = {true, true, true};
+  const bool all[WITH_OPTIONS] = {true, true, true, true}, none[WITH_OPTIONS] = {},
+             has[WITH_OPTIONS] = {true, true, true, true};
   assert(choose_view(true, false, all, has) == View::REST);
   assert(choose_view(true, true, none, has) == View::WORK);
 }
 
 static void test_view_without_power() {
-  const bool none[3] = {false, false, false}, one[3] = {false, true, false}, has[3] = {true, true, true};
-  const bool only_first[3] = {true, false, false};
+  const bool none[WITH_OPTIONS] = {}, one[WITH_OPTIONS] = {false, true, false, false},
+             has[WITH_OPTIONS] = {true, true, true, true};
+  const bool only_first[WITH_OPTIONS] = {true, false, false, false};
+  // The fourth source has a status too.
+  const bool fourth[WITH_OPTIONS] = {false, false, false, true};
+  assert(choose_view(false, false, fourth, has) == View::WORK);
   assert(choose_view(false, false, none, has) == View::REST);
   assert(choose_view(false, false, one, has) == View::WORK);
   // A running flag of a source without a status option does not count.
@@ -74,6 +79,45 @@ static void test_source_framed() {
   assert(!source_framed(View::REST, 2, 2, 2));    // the key just tapped is lit, not framed
   assert(!source_framed(View::WORK, 1, -1, 1));   // WORK marks the chosen one by its fill
   assert(!source_framed(View::REST, 0, -1, -1));
+}
+
+static void test_toggles_each_goes_back_alone() {
+  Toggles t;
+  bool picture = true, power = false;
+  t.flip(picture, 1000);
+  t.flip(power, 3000);
+  assert(!picture && power);
+  // The first has waited long enough, the second not yet.
+  assert(t.expire(1000 + CONFIRM_MS));
+  assert(picture && power);
+  assert(!t.expire(1000 + CONFIRM_MS + 1));
+  assert(t.expire(3000 + CONFIRM_MS));
+  assert(picture && !power);
+  assert(t.count == 0);
+}
+
+static void test_toggles_turned_twice_keeps_what_was_said() {
+  Toggles t;
+  bool on = false;
+  t.flip(on, 1000);
+  t.flip(on, 2000);   // back to what Home Assistant last said
+  assert(!on && t.count == 1);
+  assert(!t.expire(1000 + CONFIRM_MS));   // the wait counts from the last tap
+  assert(!t.expire(2000 + CONFIRM_MS));   // nothing to put back
+  assert(!on && t.count == 0);
+  t.flip(on, 9000);
+  t.flip(on, 9100);
+  t.flip(on, 9200);
+  assert(on);
+  assert(t.expire(9200 + CONFIRM_MS) && !on);
+}
+
+static void test_toggles_clear() {
+  Toggles t;
+  bool on = false;
+  t.flip(on, 1000);
+  t.clear();   // Home Assistant has spoken: what the key shows is its state
+  assert(!t.expire(1000 + CONFIRM_MS) && on);
 }
 
 static void test_unconfirmed() {
@@ -227,6 +271,9 @@ int main() {
   test_layout_rest_shows_six();
   test_source_framed();
   test_unconfirmed();
+  test_toggles_each_goes_back_alone();
+  test_toggles_turned_twice_keeps_what_was_said();
+  test_toggles_clear();
   test_layout_work_no_auto();
   test_hit_gap_is_none();
   test_starting_ends_on_device_on();

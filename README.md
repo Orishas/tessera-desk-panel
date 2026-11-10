@@ -4,8 +4,8 @@ One full-page tile for a desk. With the monitor off it shows large keys that sta
 shows the sources in a row with a dot for each device that runs, the monitor's keys, an **Auto** key for the chosen
 source and a key for a device such as a PC.
 
-- **A source key** runs your script with the option in the field `quelle`. Without a script it chooses the option
-  of the select directly.
+- **A source key** runs your script with the option in the field `source` (and in `quelle`, so a script may call its
+  field either). Without a script it chooses the option of the select directly.
 - **The device key** turns the device on and says "Starting …" with a blinking dot until the device is there (at most two minutes). A dot on the key says the device is on.
   While the device is on, the key asks first, on a card: Cancel or Shut down.
 - **The view follows the monitor switch.** Off is the large start keys, on is the row. Without a monitor switch,
@@ -24,9 +24,9 @@ source and a key for a device such as a PC.
 
    | Option | What |
    |---|---|
-   | **Script** | Runs with the option as `quelle` (the script's field must be called so). |
-   | **State of the 1st, 2nd and 3rd source** | A device that is on while that source runs (`binary_sensor`, `media_player`, `switch` or `device_tracker`). Its key gets a dot. A media player in `standby` counts as off. |
-   | **Auto of the 1st, 2nd and 3rd source** | A switch or input boolean that says whether that source turns the monitor on by itself. The Auto key switches the chosen source's. A source key shows a small Auto mark while it is on. |
+   | **Script** | Runs with the option as `source` and as `quelle`: call the script's field either. |
+   | **State of the 1st to 4th source** | A device that is on while that source runs (`binary_sensor`, `media_player`, `switch` or `device_tracker`). Its key gets a dot. A media player in `standby` counts as off. |
+   | **Auto of the 1st to 4th source** | A switch or input boolean that says whether that source turns the monitor on by itself. The Auto key switches the chosen source's. A source key shows a small Auto mark while it is on. |
    | **Picture switch**, **Monitor switch** | The monitor's keys. The monitor switch also chooses the view. |
    | **Device** | A switch for a device such as a PC. Its key carries the switch's name. |
 
@@ -39,7 +39,10 @@ Logos, guessed from the option's name: `windows` (PC), `apple` (Mac), `playstati
 ## Good to know
 
 - The screen must be allowed to perform Home Assistant actions (Tessera turns it on when it adds the screen).
-- Up to six sources, with the monitor on or off.
+- Up to six sources, with the monitor on or off. The first four can have a state and an Auto switch: a tile has at
+  most twelve options.
+- A switch that Home Assistant does not answer within five seconds goes back to what it was, each key by itself. The
+  card that asks before shutting down stays open when the screen could not send the action.
 - On a screen turned in its settings (Rotation 90°, 180° or 270°) that turns its picture in software, such as the
   Guition 4", a tap on this tile is lost with firmware 0.60.0: the pressed card takes two slow frames, and the firmware
   counts the tap as a hold, which a plugin's tile does not get. It works with Rotation at 0°.

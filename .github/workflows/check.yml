@@ -1,0 +1,28 @@
+# On every push and pull request: the model's host tests, and Tessera's own check of the plugin (tools/check.py of
+# tessera-plugins, the same one its community list runs on a release).
+name: check
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: MaxGramser/tessera-plugins
+          path: tessera-plugins
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pyyaml
+      - name: Host tests of the model
+        run: sh tests/run.sh
+      - name: Tessera's check
+        run: |
+          # check.py wants the plugin beside tessera-plugins, as on a desk, not inside it.
+          mkdir ../desk_panel && git archive HEAD | tar -x -C ../desk_panel
+          python3 tessera-plugins/tools/check.py ../desk_panel

@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.0 - 2026-11-10
+- The fourth source can have a state and an Auto switch too (two new options). A tile has at most twelve options, so
+  the fifth and sixth source stay without.
+- The script gets the option in the field `source` as well as in `quelle`: call your script's field either.
+- A switch that Home Assistant does not answer goes back by itself, also when you tapped another switch meanwhile.
+  Before, only the last one tapped went back.
+- The card that asks before shutting down stays open when the screen could not send the action, instead of closing
+  as if it had.
+- A logo is at most 160 pixels a side: on a very large key it no longer takes memory without end.
+- The repository checks itself on every push (the model's tests and Tessera's `check.py`).
+
 ## 0.3.1 - 2026-11-10
 - The tile draws a key again only when its look changes: an update from Home Assistant that changes nothing on the
   tile no longer redraws the source keys.

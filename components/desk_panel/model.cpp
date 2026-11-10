@@ -139,6 +139,30 @@ const char *switch_service(const char *entity, bool on) {
 
 bool unconfirmed(uint32_t now_ms, uint32_t at_ms) { return now_ms - at_ms >= CONFIRM_MS; }
 
+void Toggles::flip(bool &shown, uint32_t now_ms) {
+  One *one = nullptr;
+  for (int i = 0; i < count; ++i)
+    if (list[i].shown == &shown) one = &list[i];
+  if (one) one->at_ms = now_ms;
+  else if (count < MOST) list[count++] = One{&shown, shown, now_ms};
+  shown = !shown;
+}
+
+bool Toggles::expire(uint32_t now_ms) {
+  bool changed = false;
+  int kept = 0;
+  for (int i = 0; i < count; ++i) {
+    if (!unconfirmed(now_ms, list[i].at_ms)) {
+      list[kept++] = list[i];
+      continue;
+    }
+    changed = changed || *list[i].shown != list[i].before;
+    *list[i].shown = list[i].before;
+  }
+  count = kept;
+  return changed;
+}
+
 void Starting::begin(uint32_t now_ms) {
   since_ms = now_ms;
   on = true;

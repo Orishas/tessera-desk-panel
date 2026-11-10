@@ -59,8 +59,7 @@ class DeskTile : public tessera::Tile {
   bool pulsing_ = false, pulse_lit_ = false;   // "Starting ..." shows, and whether its dot is lit this second
   Starting src_starting_;   // a tapped source whose device was off: its dot blinks until the device is there
   int starting_src_ = -1;
-  bool *toggled_{};         // a switch shown the other way that Home Assistant has not confirmed yet
-  uint32_t toggled_at_ = 0;
+  Toggles toggles_;         // the switches shown the other way that Home Assistant has not confirmed yet
 
   lv_obj_t *sblock_[MAX_SOURCES]{}, *slogo_[MAX_SOURCES]{}, *sword_[MAX_SOURCES]{}, *sdot_[MAX_SOURCES]{},
       *sauto_[MAX_SOURCES]{};

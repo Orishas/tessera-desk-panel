@@ -20,7 +20,7 @@ static constexpr uint32_t ICON_POWER = 0xF0425;
 static constexpr uint32_t ICON_AUTO = 0xF18F2;
 static constexpr uint32_t ICON_MONITOR = 0xF0379;
 
-// "status_1" ... "auto_3": the id of an option, and of its entity in on_state's data.
+// "status_1" ... "auto_4": the id of an option, and of its entity in on_state's data.
 struct OptionId {
   char text[12];
   OptionId(const char *stem, int i) { snprintf(text, sizeof(text), "%s_%d", stem, i + 1); }
@@ -111,7 +111,7 @@ void DeskTile::on_state(JsonObjectConst data) {
   if (starting_src_ >= count ||
       (starting_src_ >= 0 && !src_starting_.active(esphome::millis(), status_on_[starting_src_])))
     starting_src_ = -1;
-  toggled_ = nullptr;   // Home Assistant has spoken: the keys show its states
+  toggles_.clear();   // Home Assistant has spoken: the keys show its states
 
   bool has_status[WITH_OPTIONS];
   for (int i = 0; i < WITH_OPTIONS; ++i) has_status[i] = !status_[i].empty();
@@ -131,12 +131,8 @@ void DeskTile::on_tick(uint32_t) {
     pending_ = -1;
     refresh();   // the chosen source is the select's again: its Auto key may come or go
   }
-  // No answer to a switch: the key shows what Home Assistant last said.
-  if (toggled_ && unconfirmed(now, toggled_at_)) {
-    *toggled_ = !*toggled_;
-    toggled_ = nullptr;
-    paint();
-  }
+  // No answer to a switch: its key shows what Home Assistant last said. Each switch waits for itself.
+  if (toggles_.expire(now)) paint();
   if (!pulsing_ && starting_src_ < 0) return;
   // "Starting ...": the dot of what starts blinks once a second, painted here (no animation of its own). Counted
   // from the tap, so it blinks on a screen whose clock is not set too.
@@ -229,8 +225,10 @@ void DeskTile::place_source(int i, const Rect &r) {
   const bool rest = view_ == View::REST;
   const int pad = ui::px(8);
   const int lh = ui::line_height(Font::BODY);
-  // REST: a large logo, 45 % of the key's shorter side. WORK: as large as the key leaves beside its word.
-  const int side = std::max(0, rest ? std::min(r.w, r.h) * 45 / 100 : std::min(r.w - 2 * pad, r.h - lh - 3 * pad));
+  // REST: a large logo, 45 % of the key's shorter side. WORK: as large as the key leaves beside its word. Never
+  // more than LOGO_MOST, which bounds its mask.
+  const int room = rest ? std::min(r.w, r.h) * 45 / 100 : std::min(r.w - 2 * pad, r.h - lh - 3 * pad);
+  const int side = std::max(0, std::min(room, LOGO_MOST));
   const uint8_t *alpha = src_[i].logo[0] && side > 0 ? logo_alpha(src_[i].logo) : nullptr;
   const int b = ui::px(2);   // the block's border: its children sit inside it
   const int top = (r.h - (alpha ? side + pad : 0) - lh) / 2 - b;
@@ -358,7 +356,10 @@ void DeskTile::tap_source(int i) {
   const std::string value = src_[i].value;
   bool sent;
   if (!script_.empty()) {
+    // The option under both names, so the script's field may be called either: a script takes what it has no field
+    // for as a plain variable.
     JsonDocument d;
+    d["variables"]["source"] = value;
     d["variables"]["quelle"] = value;
     sent = tessera::action("script.turn_on", roomy::plain(script_), d);
   } else {
@@ -382,14 +383,12 @@ void DeskTile::tap_source(int i) {
 }
 
 // A switch or an input boolean, turned the other way; the key shows it at once and Home Assistant confirms. Without
-// an answer within CONFIRM_MS the key goes back (on_tick).
+// an answer within CONFIRM_MS the key goes back (on_tick), each switch by itself.
 void DeskTile::tap_switch(const tessera::Text &entity, bool &on) {
   const std::string e = roomy::plain(entity);
   if (e.empty()) return;
   if (tessera::action(switch_service(e.c_str(), !on), e)) {
-    on = !on;
-    toggled_ = &on;
-    toggled_at_ = esphome::millis();
+    toggles_.flip(on, esphome::millis());
     paint();
   }
 }
