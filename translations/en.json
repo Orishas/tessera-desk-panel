@@ -27,17 +27,24 @@
     "status_2": "State of the 2nd source",
     "status_3": "State of the 3rd source",
     "status_4": "State of the 4th source",
+    "status_5": "State of the 5th source",
+    "status_6": "State of the 6th source",
     "status_hint": "Optional. A device that is on while this source runs; its key then shows a dot. In the order of the select's options.",
     "auto_1": "Auto of the 1st source",
     "auto_2": "Auto of the 2nd source",
     "auto_3": "Auto of the 3rd source",
     "auto_4": "Auto of the 4th source",
+    "auto_5": "Auto of the 5th source",
+    "auto_6": "Auto of the 6th source",
     "auto_hint": "Optional. A switch or input boolean that says whether this source turns the monitor on by itself. The Auto key switches it for the chosen source.",
     "picture": "Picture switch",
     "picture_hint": "Optional. On while the monitor shows a picture; its key switches only the picture.",
     "power": "Monitor switch",
     "power_hint": "Optional. On while the monitor is on. It also chooses the view: off shows the large start keys.",
     "device": "Device",
-    "device_hint": "Optional. A switch for a device such as a PC: off, a tap turns it on; on, the tile asks before it turns it off."
+    "device_hint": "Optional. A switch for a device such as a PC: off, a tap turns it on; on, the tile asks before it turns it off.",
+    "group_status": "Which device runs",
+    "group_auto": "Auto",
+    "group_monitor": "The monitor's keys"
   }
 }

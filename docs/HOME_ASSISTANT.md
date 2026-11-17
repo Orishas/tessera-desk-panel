@@ -246,8 +246,8 @@ is back at once, and an OLED that shows nothing does not age); turning the TV of
 |---|---|
 | The tile's entity | `input_select.desk_source` |
 | Script | `script.desk_show_source` |
-| State of the 1st to 4th source | `binary_sensor.pc`, `binary_sensor.mac`, `media_player.ps5`, and nothing for a console that tells Home Assistant nothing |
-| Auto of the 1st to 4th source | `input_boolean.pc_auto`, `input_boolean.mac_auto`, `input_boolean.ps5_auto` (below) |
+| State of the 1st to 6th source | `binary_sensor.pc`, `binary_sensor.mac`, `media_player.ps5`, and nothing for a console that tells Home Assistant nothing |
+| Auto of the 1st to 6th source | `input_boolean.pc_auto`, `input_boolean.mac_auto`, `input_boolean.ps5_auto` (below) |
 | Picture switch | `switch.desk_monitor_picture` |
 | Monitor switch | `switch.desk_monitor` |
 | Device | `switch.pc` |

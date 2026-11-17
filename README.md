@@ -15,9 +15,8 @@ source and a key for a device such as a PC.
 
 1. In Tessera, open **Plugins**, choose **Add with a link** and paste `https://github.com/Orishas/tessera-desk-panel`.
 2. Add the plugin to a screen. The screen builds once.
-3. In **Layout**, place the **Desk panel** tile from the library's Plugins group and make it 2x2 (everything) or 2x3
-   on a grid that offers it; 2x1 shows the sources alone. A 2x3 grid keeps its whole page for Tessera's own tiles,
-   so there 2x2 is the largest. The editor starts it at 1x1: drag its right edge, then
+3. In **Layout**, place the **Desk panel** tile from the library's Plugins group and make it 2x2 (everything), 2x3
+   on a grid that offers it, or the whole page; 2x1 shows the sources alone. The editor starts it at 1x1: drag its right edge, then
    its bottom edge.
 4. In the inspector, choose the select whose options are the sources (such as `input_select.buro_monitor_quelle`).
 5. Choose what you have, all optional:
@@ -25,8 +24,8 @@ source and a key for a device such as a PC.
    | Option | What |
    |---|---|
    | **Script** | Runs with the option as `source` and as `quelle`: call the script's field either. |
-   | **State of the 1st to 4th source** | A device that is on while that source runs (`binary_sensor`, `media_player`, `switch` or `device_tracker`). Its key gets a dot. A media player in `standby` counts as off. |
-   | **Auto of the 1st to 4th source** | A switch or input boolean that says whether that source turns the monitor on by itself. The Auto key switches the chosen source's. A source key shows a small Auto mark while it is on. |
+   | **State of the 1st to 6th source** | A device that is on while that source runs (`binary_sensor`, `media_player`, `switch` or `device_tracker`). Its key gets a dot. A media player in `standby` counts as off. |
+   | **Auto of the 1st to 6th source** | A switch or input boolean that says whether that source turns the monitor on by itself. The Auto key switches the chosen source's. A source key shows a small Auto mark while it is on. |
    | **Picture switch**, **Monitor switch** | The monitor's keys. The monitor switch also chooses the view. |
    | **Device** | A switch for a device such as a PC. Its key carries the switch's name. |
 
@@ -42,8 +41,7 @@ Logos, guessed from the option's name: `windows` (PC), `apple` (Mac), `playstati
 ## Good to know
 
 - The screen must be allowed to perform Home Assistant actions (Tessera turns it on when it adds the screen).
-- Up to six sources, with the monitor on or off. The first four can have a state and an Auto switch: a tile has at
-  most twelve options.
+- Up to six sources, with the monitor on or off. Each can have a state and an Auto switch.
 - A switch that Home Assistant does not answer within five seconds goes back to what it was, each key by itself. The
   card that asks before shutting down stays open when the screen could not send the action.
 - On a screen turned in its settings (Rotation 90°, 180° or 270°) that turns its picture in software, such as the

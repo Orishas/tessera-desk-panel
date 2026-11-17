@@ -20,7 +20,7 @@ static constexpr uint32_t ICON_POWER = 0xF0425;
 static constexpr uint32_t ICON_AUTO = 0xF18F2;
 static constexpr uint32_t ICON_MONITOR = 0xF0379;
 
-// "status_1" ... "auto_4": the id of an option, and of its entity in on_state's data.
+// "status_1" ... "auto_6": the id of an option, and of its entity in on_state's data.
 struct OptionId {
   char text[12];
   OptionId(const char *stem, int i) { snprintf(text, sizeof(text), "%s_%d", stem, i + 1); }
@@ -59,7 +59,7 @@ void DeskTile::create(const tessera::TileContext &c) {
     sdot_[i] = ui::block(sblock_[i], theme::ACCENT);
     lv_obj_set_style_radius(sdot_[i], LV_RADIUS_CIRCLE, 0);
     lv_obj_set_size(sdot_[i], ui::mm(2), ui::mm(2));
-    if (i < WITH_OPTIONS) {   // only these sources have an Auto option
+    if (i < WITH_OPTIONS) {
       sauto_[i] = ui::label(sblock_[i], Font::ICON_SMALL, theme::INK_SOFT);
       ui::set_text(sauto_[i], ui::icon(ICON_AUTO));
     }
@@ -263,9 +263,12 @@ void DeskTile::place_source(int i, const Rect &r) {
   const int inset = ui::px(8), dot = ui::mm(2);
   lv_obj_set_pos(sdot_[i], r.w - inset - dot - b, inset - b);
   if (sauto_[i]) lv_obj_set_pos(sauto_[i], inset - b, inset - b);   // top left; the dot is top right
-  // The mark shows only where it touches neither the logo nor the word: a small key goes without.
+  // The mark shows only where it touches neither the logo nor the word, nor the dot of a source with a state (a narrow
+  // key of six on a standing screen): a small key goes without.
   const int mark_end = inset - b + ui::line_height(Font::ICON_SMALL);
-  mark_fits_[i] = mark_end <= top || (alpha && mark_end <= (r.w - side) / 2 - b);
+  const bool has_dot = i < WITH_OPTIONS && !status_[i].empty();
+  const bool clear_of_dot = !has_dot || mark_end + ui::px(4) <= r.w - inset - dot - b;
+  mark_fits_[i] = clear_of_dot && (mark_end <= top || (alpha && mark_end <= (r.w - side) / 2 - b));
 }
 
 void DeskTile::place_ctl(Ctl k, const Rect &r) {

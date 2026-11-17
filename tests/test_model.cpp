@@ -42,6 +42,11 @@ static void test_view_without_power() {
   // The fourth source has a status too.
   const bool fourth[WITH_OPTIONS] = {false, false, false, true};
   assert(choose_view(false, false, fourth, has) == View::WORK);
+  // So does the sixth, the last a tile shows.
+  const bool sixth[WITH_OPTIONS] = {false, false, false, false, false, true};
+  const bool has_all[WITH_OPTIONS] = {true, true, true, true, true, true};
+  assert(choose_view(false, false, sixth, has_all) == View::WORK);
+  assert(choose_view(false, false, sixth, has) == View::REST);
   assert(choose_view(false, false, none, has) == View::REST);
   assert(choose_view(false, false, one, has) == View::WORK);
   // A running flag of a source without a status option does not count.

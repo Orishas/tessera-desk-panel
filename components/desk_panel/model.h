@@ -13,9 +13,9 @@ struct Slot { Key key; Rect r; };
 struct Layout { Slot slots[16]; int count = 0; };
 
 static constexpr int MAX_SOURCES = 6;
-// The sources that can have a status and an Auto switch: the first four, by the manifest's options (a tile has at
-// most twelve).
-static constexpr int WITH_OPTIONS = 4;
+// The sources that can have a status and an Auto switch: every one, by the manifest's options (status_1 to status_6,
+// auto_1 to auto_6; plugin API 0.26 lets a tile have that many).
+static constexpr int WITH_OPTIONS = MAX_SOURCES;
 static constexpr uint32_t STARTING_MS = 120000;
 // How long a key shows a switch the other way before Home Assistant has said so; then it shows the old state again.
 static constexpr uint32_t CONFIRM_MS = 5000;
