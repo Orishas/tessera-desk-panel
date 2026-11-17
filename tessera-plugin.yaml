@@ -3,8 +3,8 @@
 # and a key that turns a device such as a PC on, and off after a question. Every field is
 # explained in docs/MANIFEST.md of tessera-plugins.
 id: desk_panel
-version: 0.4.0
-api: "0.24"
+version: 0.5.0
+api: "0.26"
 icon: desk
 maintainer: Orishas
 license: MIT
@@ -26,26 +26,30 @@ tiles:
   - id: desk
     name: tile_name
     icon: desk
-    sizes: { min: 2x1, max: 2x3 }
-    # Six source keys (block, logo, word, dot), four Auto marks, four other keys (block, icon, word), the device's
-    # dot, a note, about 3.8 KB; members (sources, layout, texts, image descriptors, switches that wait) about 2.8 KB.
+    sizes: { min: 2x1, max: 2x3, full: true }
+    # Six source keys (block, logo, word, dot), six Auto marks, four other keys (block, icon, word), the device's
+    # dot, a note, about 4.0 KB; members (sources, layout, texts, image descriptors, switches that wait) about 3.0 KB.
     # Not in it: each logo's mask, its side squared in bytes (a logo is at most 160 pixels a side). A board with PSRAM
     # keeps the masks there, outside what this number counts; a board without keeps them inside the chip.
-    memory: 6700
+    memory: 7100
     domains: [input_select, select]
     attributes: [options]
     example: tile_example
     preview: { title: "{name}", value: "{state}" }
     options:
       - { id: script, kind: entity, domains: [script], label: script, hint: script_hint }
-      - { id: status_1, kind: entity, domains: [binary_sensor, media_player, switch, device_tracker], label: status_1, hint: status_hint }
-      - { id: status_2, kind: entity, domains: [binary_sensor, media_player, switch, device_tracker], label: status_2, hint: status_hint }
-      - { id: status_3, kind: entity, domains: [binary_sensor, media_player, switch, device_tracker], label: status_3, hint: status_hint }
-      - { id: status_4, kind: entity, domains: [binary_sensor, media_player, switch, device_tracker], label: status_4, hint: status_hint }
-      - { id: auto_1, kind: entity, domains: [input_boolean, switch], label: auto_1, hint: auto_hint }
-      - { id: auto_2, kind: entity, domains: [input_boolean, switch], label: auto_2, hint: auto_hint }
-      - { id: auto_3, kind: entity, domains: [input_boolean, switch], label: auto_3, hint: auto_hint }
-      - { id: auto_4, kind: entity, domains: [input_boolean, switch], label: auto_4, hint: auto_hint }
-      - { id: picture, kind: entity, domains: [switch], label: picture, hint: picture_hint }
-      - { id: power, kind: entity, domains: [switch], label: power, hint: power_hint }
+      - { id: status_1, kind: entity, domains: [binary_sensor, media_player, switch, device_tracker], label: status_1, hint: status_hint, group: group_status }
+      - { id: status_2, kind: entity, domains: [binary_sensor, media_player, switch, device_tracker], label: status_2, hint: status_hint, group: group_status }
+      - { id: status_3, kind: entity, domains: [binary_sensor, media_player, switch, device_tracker], label: status_3, hint: status_hint, group: group_status }
+      - { id: status_4, kind: entity, domains: [binary_sensor, media_player, switch, device_tracker], label: status_4, hint: status_hint, group: group_status }
+      - { id: status_5, kind: entity, domains: [binary_sensor, media_player, switch, device_tracker], label: status_5, hint: status_hint, group: group_status }
+      - { id: status_6, kind: entity, domains: [binary_sensor, media_player, switch, device_tracker], label: status_6, hint: status_hint, group: group_status }
+      - { id: auto_1, kind: entity, domains: [input_boolean, switch], label: auto_1, hint: auto_hint, group: group_auto }
+      - { id: auto_2, kind: entity, domains: [input_boolean, switch], label: auto_2, hint: auto_hint, group: group_auto }
+      - { id: auto_3, kind: entity, domains: [input_boolean, switch], label: auto_3, hint: auto_hint, group: group_auto }
+      - { id: auto_4, kind: entity, domains: [input_boolean, switch], label: auto_4, hint: auto_hint, group: group_auto }
+      - { id: auto_5, kind: entity, domains: [input_boolean, switch], label: auto_5, hint: auto_hint, group: group_auto }
+      - { id: auto_6, kind: entity, domains: [input_boolean, switch], label: auto_6, hint: auto_hint, group: group_auto }
+      - { id: picture, kind: entity, domains: [switch], label: picture, hint: picture_hint, group: group_monitor }
+      - { id: power, kind: entity, domains: [switch], label: power, hint: power_hint, group: group_monitor }
       - { id: device, kind: entity, domains: [switch, input_boolean], label: device, hint: device_hint }

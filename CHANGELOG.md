@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.0 - 2026-11-17
+- The fifth and sixth source can have a state and an Auto switch too (four new options).
+- The tile can be the whole page on every grid, also on a 2x3 grid, where 2x2 was the largest before.
+- On a standing screen, a narrow key of six leaves out its Auto mark where the mark would lie on the state's dot.
+- The inspector is shorter: the states, the Auto switches and the monitor's keys stand in three sections, folded
+  until one of them has a value.
+- Needs Tessera 0.4.98 or later (plugin API 0.26).
+
 ## 0.4.0 - 2026-11-10
 - The fourth source can have a state and an Auto switch too (two new options). A tile has at most twelve options, so
   the fifth and sixth source stay without.
